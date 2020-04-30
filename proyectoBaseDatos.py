@@ -6,56 +6,251 @@ import random
 ##################################################################################################################
                                         #Funciones para el sistema
 ##################################################################################################################
-def logout(View,currentUser):
+def logOut(View,currentUser):
     View.quit()
     currentUser = {}
-    loginView()
+    loginView(con)
 
+def insertNewArtist(currentUser):
+    try:
+        cur = con.cursor()
+        name = newArtistName.get()
+        cur.execute("""SELECT ArtistId
+                    FROM artist
+                    ORDER BY ArtistId desc
+                    LIMIT 1""")
+        IDS = cur.fetchall()
+        for ar in IDS:
+            lastID = ar[0]
+        lastID = lastID + 1
+        dictionary = {'ArtistId':lastID,'Name':name}
+        cur.execute("""INSERT INTO artist (artistid, name) VALUES (%(ArtistId)s,%(Name)s)""",dictionary)
+        con.commit()
+        print("->Artist Registered Succesfully!")
+    except:
+        print("-> Artist Registration Failed!")
+
+def insertNewAlbum(currentUser):
+    try:
+        cur = con.cursor()
+        title = albumTitle.get()
+        nameArtist = albumArtistName.get()
+        dictionary = {'Name':nameArtist}
+        cur.execute("""SELECT artistid
+                        FROM artist
+                        WHERE name = %(Name)s""",dictionary)
+        artistsIDs = cur.fetchall()
+        for artistID in artistsIDs:
+            arID = artistID[0]
+            cur.execute("""SELECT albumid
+                            FROM album
+                            ORDER BY albumid DESC
+                            LIMIT 1""")
+            albumIDs = cur.fetchall()
+            for albumID in albumIDs:
+                lastAlID = albumID[0]
+                lastAlID += 1
+                dictionary2 = {'AlbumId':lastAlID,'Title':title,'ArtistId':arID}
+                cur.execute("""INSERT INTO album (albumid, title, artistid)
+                            VALUES (%(AlbumId)s,%(Title)s,%(ArtistId)s)""",dictionary2)
+                con.commit()
+                print("-> Album Registered Succesfully!")
+    except:
+        print("-> Album Registration Failed!")
+
+def insertNewSong(currentUser):
+    try:
+        cur = con.cursor()
+        songTitle = newSongTitle.get()
+        songAlbum = newSongAlbumName.get()
+        mediaType = newSongMediaType.get()
+        songGenre = newSongGenre.get()
+        songComposer = newSongComposer.get()
+        songMilliseconds = newSongMilliseconds.get()
+        songMilliseconds = int(songMilliseconds)
+        songBytes = newSongBytes.get()
+        songBytes = int(songBytes)
+        songPrice = newSongPrice.get()
+        songPrice = float(songPrice)
+        cur.execute("""SELECT trackid
+                FROM track
+                ORDER BY trackid DESC
+                LIMIT 1""")
+        tracksIDs = cur.fetchall()
+        for trackID in tracksIDs:
+            lastTrackID = trackID[0]
+            lastTrackID += 1
+            dictionary = {'Title':songTitle,'Name':songGenre,'MediaName':mediaType}
+            cur.execute("""SELECT albumid
+                            FROM album
+                            WHERE title = %(Title)s""",dictionary)
+            albumsIDs = cur.fetchall()
+            for albumID in albumsIDs:
+                rightAlbumID = albumID[0]
+                cur.execute("""SELECT genreid
+                            FROM genre
+                            WHERE name = %(Name)s""",dictionary)
+                genresIDs = cur.fetchall()
+                for genreID in genresIDs:
+                    rightGenreID = genreID[0]
+                    cur.execute("""SELECT mediatypeid
+                            FROM mediatype
+                            WHERE name = %(MediaName)s""",dictionary)
+                    mediaTypesIDs = cur.fetchall()
+                    for mediaTypeID in mediaTypesIDs:
+                        rightMediaType = mediaTypeID[0]
+                        lastDictionary = {'TrackId':lastTrackID,
+                                          'Name':songTitle,
+                                          'AlbumId':rightAlbumID,
+                                          'MediaTypeId':rightMediaType,
+                                          'GenreId':rightGenreID,
+                                          'Composer':songComposer,
+                                          'Milliseconds':songMilliseconds,
+                                          'Bytes':songBytes,
+                                          'UnitPrice':songPrice}
+                        print("Done Succesfully!")
+    except:
+        print("New Song Registration Failed!")
+
+def modifyArtist(currentUser):
+    try:
+        cur = con.cursor()
+        oldArtist = oldArtistName.get()
+        newArtist = upArtistName.get()
+        dictionary = {'OldName':oldArtist,'Name':newArtist}
+        cur.execute("""UPDATE artist
+                        SET name = %(Name)s
+                        WHERE name = %(OldName)s""",dictionary)
+        con.commit()
+        print("\n-> Artist Updated Succesfully!")
+    except:
+        print("\nArtist Update Failed!")
+
+def modifyAlbum(currentUser):
+    try:
+        cur = con.cursor()   
+        oldAlbum = oldAlbumName.get()
+        newAlbum = upAlbumName.get()
+        newArtist = upAlbumArtist.get()
+        lastAlbumID = 0
+        dictionary = {'ArtistName':newArtist,'AlbumName':oldAlbum}
+        cur.execute("""SELECT albumid
+                        FROM album
+                        WHERE title = %(AlbumName)s""",dictionary)
+        albumIDS = cur.fetchall()
+        for albumID in albumIDS:
+            lastAlbumID = albumID[0]
+        lastAlbumID += 1
+        cur.execute("""SELECT artistid FROM artist WHERE name = %(ArtistName)s""",dictionary)
+        artistsIDs = cur.fetchall()
+        for artistID in artistsIDs:
+            rightID = artistID[0]
+            finalDictionary = {'OldAlbum':oldAlbum,'albumID':lastAlbumID,'NewAlbum':newAlbum,'ArtistID':rightID}
+            cur.execute("""UPDATE album
+                            SET albumID = %(albumID)s,
+                                title = %(NewAlbum)s,
+                                artistid = %(ArtistID)s
+                        WHERE title = %(OldAlbum)s""",finalDictionary)
+            con.commit()
+        print("\n-> Artist Updated Succesfully!")
+    except:
+        print("\nArtist Update Failed!")
+
+def songDeactivation(currentUser):
+    try:
+        cur = con.cursor()
+        songTitle = deactivateSongTitle.get()
+        songComposer = deactivateSongComposer.get()
+        dictionary = {'Name':songTitle}
+        cur.execute("""SELECT activa
+                        FROM track
+                        WHERE name = %(Name)s""",dictionary)
+        activos = cur.fetchall()
+        for activo in activos:
+            if activo[0] == 1:
+                cur.execute("""UPDATE track
+                                SET activa = 2
+                                WHERE name = %(Name)s""",dictionary)
+                con.commit()
+                print("-> Song Deactivated Succesfully!")
+            elif activo[0] == 2:
+                print("-> Song Already Deactivated!")
+    except:
+        print("-> Song Deactivation Failed!")
+
+def songActivation(currentUser):
+    try:
+        cur = con.cursor()
+        songTitle = activateSongTitle.get()
+        songComposer = activateSongComposer.get()
+        dictionary = {'Name':songTitle}
+        cur.execute("""SELECT activa
+                        FROM track
+                        WHERE name = %(Name)s""",dictionary)
+        activos = cur.fetchall()
+        for activo in activos:
+            if activo[0] == 2:
+                cur.execute("""UPDATE track
+                                SET activa = 1
+                                WHERE name = %(Name)s""",dictionary)
+                con.commit()
+                print("-> Song Activated Succesfully!")
+            elif activo[0] == 1:
+                print("-> Song is Active!")
+    except:
+        print("-> Song Activation Failed!")
+
+def changeUserPermission(currentUser):
+    try:
+        cur = con.cursor()
+        usName = permissionUsername.get()
+        newPer = permissionNewNumber.get()
+        newPer = int(newPer)
+        dictionary = {'username':usName,'rol':newPer}
+        cur.execute("""SELECT rol
+                        FROM customer
+                        WHERE username = %(username)s""",dictionary)
+        permissions = cur.fetchall()
+        for permission in permissions:
+            if permission[0] == newPer:
+                print("\n-> User Already With That Permission!")
+            else:
+                cur.execute("""UPDATE customer
+                        SET rol = %(rol)s
+                        WHERE username = %(username)s""",dictionary)
+                con.commit()
+                print("\n-> Customer Permission Updated!")
+    except:
+        print("\n-> User Permission Failed!")
+        
 def registerUser(con):
     cur = con.cursor()
-    try:
-        cur.execute("""SELECT CustomerId
-                        FROM Customer
-                        ORDER BY CustomerId DESC
-                        LIMIT 1""")
-        CID = cur.fetchall()
-        for cid in CID:
-            lastCID = cid[0]
-
-        lastCID = lastCID + 1
-        lastCID = int(lastCID)
+    #try:
+    cur.execute("""SELECT CustomerId
+                    FROM Customer
+                    ORDER BY CustomerId DESC
+                    LIMIT 1""")
+    customerID = cur.fetchall()
+    for cid in customerID:
+        lastCustomerID = cid[0]
+        lastCustomerID += 1
         supportRepId = random.randint(3,5)
-        supportRepId = int(supportRepId)
         rol = 1
-        rol = int(rol)
         Username = newuserEntry.get()
-        Username += ''
         password = newpasswordEntry.get()
-        password += ''
         FirstName = newFirstNameEntry.get()
-        FirstName += ''
         State = newStateEntry.get()
-        State += ''
         Fax = newFaxEntry.get()
-        Fax += ''
         Company = newCompanyEntry.get()
-        Company += ''
         LastName = newLastNameEntry.get()
-        LastName += ''
         Address = newAddressEntry.get()
-        Address += ''
         City = newCityEntry.get()
-        City += ''
         Country = newCountryEntry.get()
-        Country += ''
         PostalCode = newPostalEntry.get()
-        PostalCode += ''
         Phone = newPhoneEntry.get()
-        Phone += ''
         Email = newEmailEntry.get()
-        Email += ''
         
-        newCustomer = {'CustomerId':lastCID,
+        newCustomer = {'CustomerId':lastCustomerID,
                        'FirstName':FirstName,
                        'LastName':LastName,
                        'Company':Company,
@@ -72,7 +267,7 @@ def registerUser(con):
                        'SupportRepId':supportRepId,
                        'rol':rol}
         cur.execute("""INSERT INTO Customer (CustomerId,FirstName, LastName, Company, Address, City, State, Country, PostalCode, Phone, Fax, Email, Username, password, SupportRepId, rol)
-                    VALUES (%(CustomerId)i,
+                    VALUES (%(CustomerId)s,
                     %(FirstName)s,
                     %0(LastName)s,
                     %(Company)s,
@@ -86,41 +281,43 @@ def registerUser(con):
                     %(Email)s,
                     %(Username)s,
                     %(password)s,
-                    %(SupportRepId)i,
-                    %(rol)i)""",newCustomer)
+                    %(SupportRepId)s,
+                    %(rol)s)""",newCustomer)
         print("\n->User registered succesfully!")
-    except:
-        print("\n->Registration failed!")
+    #except:
+        #print("\n->Registration failed!")
 
 def loginUser(con):
-    try:
-        message = "User not found"
-        currentUser = {}
-        user = userEntry.get()
-        cur = con.cursor()
-        cur.execute("""SELECT Username
-                        FROM Employee""")
-        admins = cur.fetchall()
-        for r in admins:
-            if user == r[0]:
-                currentUser['name'] = user
-                currentUser['type'] = 'admin' 
-                adminView(currentUser)
-                
-        cur.execute("""SELECT Username
-                        FROM Customer""")
-        customers = cur.fetchall()
-        for r in customers:
-            if user == r[0]:
-                userCredentials = {'username':user}
-                currentUser['name'] = user
-                cur.execute("""SELECT rol
-                                FROM Customer
-                                WHERE Username = %(username)s""",userCredentials)
-                rol = cur.fetchall()
-                for r in rol:
-                    userType = r[0]
-                    
+    #try:
+    message = "User not found"
+    currentUser = {}
+    for name, us in currentUser.items():
+        print(name + ": " + us)
+    user = userEntry.get()
+    password = passwordEntry.get()
+    cur = con.cursor()
+    cur.execute("""SELECT Username, password
+                    FROM Employee""")
+    admins = cur.fetchall()
+    for r in admins:
+        if user == r[0] and password == r[1]:
+            currentUser['name'] = user
+            currentUser['type'] = 'admin' 
+            adminView(currentUser)
+            
+    cur.execute("""SELECT Username, password
+                    FROM Customer""")
+    customers = cur.fetchall()
+    for r in customers:
+        if user == r[0] and password == r[1]:
+            userCredentials = {'username':user}
+            currentUser['name'] = user
+            cur.execute("""SELECT rol
+                            FROM Customer
+                            WHERE Username = %(username)s""",userCredentials)
+            rol = cur.fetchall()
+            for r in rol:
+                userType = r[0]                    
                 if userType == 1:
                     currentUser['type'] = 'Tier 1'
                 elif userType == 2:
@@ -129,8 +326,12 @@ def loginUser(con):
                     currentUser['type'] = 'Tier 3'
                 else:
                     currentUser['type'] = 'Custom'
-    except:
-        print("Login Failed")
+    #except:
+        #print("Login Failed")
+
+##################################################################################################################
+                                        #Vistas del sistema
+##################################################################################################################
 
 def registerView():
     global newuserEntry, newpasswordEntry, newFaxEntry, newFirstNameEntry, newLastNameEntry, newAddressEntry, newStateEntry, newCityEntry, newCountryEntry, newPostalEntry, newPhoneEntry, newEmailEntry, newCompanyEntry
@@ -281,6 +482,8 @@ def adminView(currentUser):
     adminWindow = tkinter.Tk()
     adminWindow.geometry("1350x800")
     adminWindow.title("Admin View")
+    for name, us in currentUser.items():
+        print(name + ": " + us)
     space00 = tkinter.Label(adminWindow, text="")
     space00.pack()
     showUser = tkinter.Label(adminWindow, text="Welcome " + currentUser['name'].title() + "!")
@@ -299,11 +502,11 @@ def adminView(currentUser):
     registerAlbum.pack()
     registerSong = tkinter.Button(adminWindow, text="Register New Song", width=20, height=1, command = lambda: newSongView(currentUser))
     registerSong.pack()
-    modifyArtist = tkinter.Button(adminWindow, text="Modify Artist", width=20, height=1)
+    modifyArtist = tkinter.Button(adminWindow, text="Modify Artist", width=20, height=1, command = lambda: modifyArtistView(currentUser))
     modifyArtist.pack()
-    modifyAlbum = tkinter.Button(adminWindow, text="Modify Album", width=20, height=1)
+    modifyAlbum = tkinter.Button(adminWindow, text="Modify Album", width=20, height=1, command = lambda: modifyAlbumView(currentUser))
     modifyAlbum.pack()
-    modifySong = tkinter.Button(adminWindow, text="Modify Song", width=20, height=1)
+    modifySong = tkinter.Button(adminWindow, text="Modify Song", width=20, height=1, command = lambda: modifySongView(currentUser))
     modifySong.pack()
     removeArtist = tkinter.Button(adminWindow, text="Remove Artist", width=20, height=1, command = lambda: removeArtistView(currentUser))
     removeArtist.pack()
@@ -313,7 +516,7 @@ def adminView(currentUser):
     removeSong.pack()
     deactivateSong = tkinter.Button(adminWindow, text="Deactivate Song", width=20, height=1, command = lambda: deactivateSongView(currentUser))
     deactivateSong.pack()
-    activateSong = tkinter.Button(adminWindow, text="Activate Song", width=20, height=1, command = lambda: deactivateSongView(currentUser))
+    activateSong = tkinter.Button(adminWindow, text="Activate Song", width=20, height=1, command = lambda: activateSongView(currentUser))
     activateSong.pack()
     manageUsers = tkinter.Button(adminWindow, text="Change User permission", width=20, height=1, command = lambda: userPermissionView(currentUser))
     manageUsers.pack()
@@ -321,11 +524,12 @@ def adminView(currentUser):
     space2.pack()
     space3 = tkinter.Label(adminWindow, text="")
     space3.pack()
-    logoutBtn = tkinter.Button(adminWindow, text="LOGOUT", width=20, height=1, command = lambda: logout(adminWindow,currentUser))
+    logoutBtn = tkinter.Button(adminWindow, text="LOGOUT", width=20, height=1, command = lambda: logOut(adminWindow,currentUser))
     logoutBtn.pack()
     adminWindow.mainloop()
 
 def newArtistView(currentUser):
+    global newArtistName
     newArtistWindow = tkinter.Tk()
     newArtistWindow.geometry("650x400")
     newArtistWindow.title("Enter New Artist")
@@ -339,11 +543,11 @@ def newArtistView(currentUser):
     Instruction1 = tkinter.Label(newArtistWindow, text="Enter Artist name")
     Instruction1.config(font=("Helvetica",15,"bold"))
     Instruction1.pack()
-    artistName = tkinter.Entry(newArtistWindow, font="Helvetica 20")
-    artistName.pack()
+    newArtistName = tkinter.Entry(newArtistWindow, font="Helvetica 20")
+    newArtistName.pack()
     space1 = tkinter.Label(newArtistWindow, text="")
     space1.pack()
-    enterArtistBtn = tkinter.Button(newArtistWindow,text="Enter Artist",bg="#c8c8c8",padx=20,pady=10)
+    enterArtistBtn = tkinter.Button(newArtistWindow,text="Enter Artist",bg="#c8c8c8",padx=20,pady=10, command = lambda: insertNewArtist(currentUser))
     enterArtistBtn.pack()
     space2 = tkinter.Label(newArtistWindow, text="")
     space2.pack()
@@ -352,6 +556,7 @@ def newArtistView(currentUser):
     newArtistWindow.mainloop()
 
 def newAlbumView(currentUser):
+    global albumTitle, albumArtistName
     newAlbumWindow = tkinter.Tk()
     newAlbumWindow.geometry("650x550")
     newAlbumWindow.title("Enter New Album")
@@ -376,7 +581,7 @@ def newAlbumView(currentUser):
     albumArtistName.pack()
     space2 = tkinter.Label(newAlbumWindow, text="")
     space2.pack()
-    enterAlbumBtn = tkinter.Button(newAlbumWindow,text="Enter Album",bg="#c8c8c8",padx=20,pady=10)
+    enterAlbumBtn = tkinter.Button(newAlbumWindow,text="Enter Album",bg="#c8c8c8",padx=20,pady=10, command = lambda: insertNewAlbum(currentUser))
     enterAlbumBtn.pack()
     space3 = tkinter.Label(newAlbumWindow, text="")
     space3.pack()
@@ -385,6 +590,7 @@ def newAlbumView(currentUser):
     newAlbumWindow.mainloop()
 
 def newSongView(currentUser):
+    global newSongTitle, newSongAlbumName, newSongMediaType, newSongGenre, newSongComposer, newSongMilliseconds, newSongBytes, newSongPrice
     newSongWindow = tkinter.Tk()
     newSongWindow.geometry("650x950")
     newSongWindow.title("Enter New Song")
@@ -398,66 +604,203 @@ def newSongView(currentUser):
     Instruction1 = tkinter.Label(newSongWindow, text="Enter Song Name")
     Instruction1.config(font=("Helvetica",13,"bold"))
     Instruction1.pack()
-    songTitle = tkinter.Entry(newSongWindow, font="Helvetica 13")
-    songTitle.pack()
+    newSongTitle = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongTitle.pack()
     space1 = tkinter.Label(newSongWindow, text="")
     space1.pack()
     Instruction2 = tkinter.Label(newSongWindow, text="Enter Album Name")
     Instruction2.config(font=("Helvetica",13,"bold"))
     Instruction2.pack()
-    songAlbumName = tkinter.Entry(newSongWindow, font="Helvetica 13")
-    songAlbumName.pack()
+    newSongAlbumName = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongAlbumName.pack()
     space2 = tkinter.Label(newSongWindow, text="")
     space2.pack()
     Instruction3 = tkinter.Label(newSongWindow, text="Enter Media Type")
     Instruction3.config(font=("Helvetica",13,"bold"))
     Instruction3.pack()
-    songMediaType = tkinter.Entry(newSongWindow, font="Helvetica 13")
-    songMediaType.pack()
+    newSongMediaType = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongMediaType.pack()
     space3 = tkinter.Label(newSongWindow, text="")
     space3.pack()
     Instruction4 = tkinter.Label(newSongWindow, text="Enter Genre")
     Instruction4.config(font=("Helvetica",13,"bold"))
     Instruction4.pack()
-    songGenre = tkinter.Entry(newSongWindow, font="Helvetica 13")
-    songGenre.pack()
+    newSongGenre = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongGenre.pack()
     space4 = tkinter.Label(newSongWindow, text="")
     space4.pack()
     Instruction5 = tkinter.Label(newSongWindow, text="Enter Composer")
     Instruction5.config(font=("Helvetica",13,"bold"))
     Instruction5.pack()
-    songComposer = tkinter.Entry(newSongWindow, font="Helvetica 13")
-    songComposer.pack()
+    newSongComposer = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongComposer.pack()
     space5 = tkinter.Label(newSongWindow, text="")
     space5.pack()
     Instruction6 = tkinter.Label(newSongWindow, text="Enter Milliseconds")
     Instruction6.config(font=("Helvetica",13,"bold"))
     Instruction6.pack()
-    songMilliseconds = tkinter.Entry(newSongWindow, font="Helvetica 13")
-    songMilliseconds.pack()
+    newSongMilliseconds = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongMilliseconds.pack()
     space6 = tkinter.Label(newSongWindow, text="")
     space6.pack()
     Instruction7 = tkinter.Label(newSongWindow, text="Enter Bytes")
     Instruction7.config(font=("Helvetica",13,"bold"))
     Instruction7.pack()
-    songBytes = tkinter.Entry(newSongWindow, font="Helvetica 13")
-    songBytes.pack()
+    newSongBytes = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongBytes.pack()
     space7 = tkinter.Label(newSongWindow, text="")
     space7.pack()
     Instruction8 = tkinter.Label(newSongWindow, text="Enter Song Price")
     Instruction8.config(font=("Helvetica",13,"bold"))
     Instruction8.pack()
-    songUnitPrice = tkinter.Entry(newSongWindow, font="Helvetica 13")
-    songUnitPrice.pack()
+    newSongPrice = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongPrice.pack()
     space8 = tkinter.Label(newSongWindow, text="")
     space8.pack()
-    enterArtistBtn = tkinter.Button(newSongWindow,text="Enter Song",bg="#c8c8c8",padx=20,pady=10)
+    enterArtistBtn = tkinter.Button(newSongWindow,text="Enter Song",bg="#c8c8c8",padx=20,pady=10, command = lambda: insertNewSong(currentUser))
     enterArtistBtn.pack()
     space10 = tkinter.Label(newSongWindow, text="")
     space10.pack()
     backSongBtn = tkinter.Button(newSongWindow,text="Back",bg="#c8c8c8",padx=20,pady=10)
     backSongBtn.pack()
     newSongWindow.mainloop()
+
+def modifyArtistView(currentUser):
+    global oldArtistName, upArtistName
+    mdArtistWindow = tkinter.Tk()
+    for i in range(7):
+        mdArtistWindow.columnconfigure(i,weight=1)
+    mdArtistWindow.geometry("850x400")
+    mdArtistWindow.title("Modify Artist")
+    space00 = tkinter.Label(mdArtistWindow, text=" ").grid(row=0,column=5)
+    titleReg = tkinter.Label(mdArtistWindow, text="Modify Artist")
+    titleReg.grid(row=2,column=3)
+    titleReg.config(font=("Steamer",22,"bold"))
+    space0 = tkinter.Label(mdArtistWindow, text=" ").grid(row=4,column=3)
+    Instructions = tkinter.Label(mdArtistWindow, text="Old Artist Name")
+    Instructions.grid(row=6,column=2)
+    Instructions.config(font=("Helvetica", 18))
+    oldArtistName = tkinter.Entry(mdArtistWindow, font="Helvetica 11")
+    oldArtistName.grid(row=7,column=2)
+    Instructions1 = tkinter.Label(mdArtistWindow, text="New Artist Name")
+    Instructions1.grid(row=6,column=4)
+    Instructions1.config(font=("Helvetica", 18))
+    upArtistName = tkinter.Entry(mdArtistWindow, font="Helvetica 11")
+    upArtistName.grid(row=7,column=4)
+    space2 = tkinter.Label(mdArtistWindow, text="").grid(row=8,column=2)
+    updateArtistBtn = tkinter.Button(mdArtistWindow, text="Update Artist", padx=15, pady=5, bg="#c8c8c8", command = lambda: modifyArtist(currentUser))
+    updateArtistBtn.grid(row=9,column=3)
+    space3 = tkinter.Label(mdArtistWindow, text="").grid(row=10,column=3)
+    backModifyBtn = tkinter.Button(mdArtistWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: loginView(currentUser))
+    backModifyBtn.grid(row=11,column=3)
+    mdArtistWindow.mainloop()
+
+def modifyAlbumView(currentUser):
+    global oldAlbumName, upAlbumName, upAlbumArtist
+    mdAlbumWindow = tkinter.Tk()
+    for i in range(7):
+        mdAlbumWindow.columnconfigure(i,weight=1)
+    mdAlbumWindow.geometry("850x500")
+    mdAlbumWindow.title("Modify Album")
+    space00 = tkinter.Label(mdAlbumWindow, text=" ").grid(row=0,column=5)
+    titleReg = tkinter.Label(mdAlbumWindow, text="Modify Album")
+    titleReg.grid(row=2,column=3)
+    titleReg.config(font=("Steamer",22,"bold"))
+    space0 = tkinter.Label(mdAlbumWindow, text=" ").grid(row=4,column=3)
+    Instructions = tkinter.Label(mdAlbumWindow, text="Old Album Name")
+    Instructions.grid(row=6,column=2)
+    Instructions.config(font=("Helvetica", 18))
+    oldAlbumName = tkinter.Entry(mdAlbumWindow, font="Helvetica 11")
+    oldAlbumName.grid(row=7,column=2)
+    Instructions2 = tkinter.Label(mdAlbumWindow, text="New Album Name")
+    Instructions2.grid(row=6,column=4)
+    Instructions2.config(font=("Helvetica", 18))
+    upAlbumName = tkinter.Entry(mdAlbumWindow, font="Helvetica 11")
+    upAlbumName.grid(row=7,column=4)
+    space1 = tkinter.Label(mdAlbumWindow, text=" ").grid(row=8,column=4)
+    Instructions3 = tkinter.Label(mdAlbumWindow, text="New Artist Name")
+    Instructions3.grid(row=9,column=4)
+    Instructions3.config(font=("Helvetica", 18))
+    upAlbumArtist = tkinter.Entry(mdAlbumWindow, font="Helvetica 11")
+    upAlbumArtist.grid(row=10,column=4)
+    space2 = tkinter.Label(mdAlbumWindow, text="").grid(row=11,column=2)
+    updateAlbumBtn = tkinter.Button(mdAlbumWindow, text="Update Album", padx=15, pady=5, bg="#c8c8c8", command = lambda: modifyAlbum(currentUser))
+    updateAlbumBtn.grid(row=12,column=3)
+    space3 = tkinter.Label(mdAlbumWindow, text="").grid(row=13,column=3)
+    backModifyBtn = tkinter.Button(mdAlbumWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: loginView(con))
+    backModifyBtn.grid(row=14,column=3)
+    mdAlbumWindow.mainloop()
+
+def modifySongView(currentUser):
+    mdSongWindow = tkinter.Tk()
+    for i in range(7):
+        mdSongWindow.columnconfigure(i,weight=1)
+    mdSongWindow.geometry("850x950")
+    mdSongWindow.title("Modify Song")
+    space00 = tkinter.Label(mdSongWindow, text=" ").grid(row=0,column=5)
+    titleReg = tkinter.Label(mdSongWindow, text="Modify Song")
+    titleReg.grid(row=2,column=3)
+    titleReg.config(font=("Steamer",20,"bold"))
+    space0 = tkinter.Label(mdSongWindow, text=" ").grid(row=4,column=3)
+    Instructions = tkinter.Label(mdSongWindow, text="Old Song Name")
+    Instructions.grid(row=6,column=2)
+    Instructions.config(font=("Helvetica", 14))
+    oldSongName = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    oldSongName.grid(row=7,column=2)
+    Instructions2 = tkinter.Label(mdSongWindow, text="New Song Name")
+    Instructions2.grid(row=6,column=4)
+    Instructions2.config(font=("Helvetica", 14))
+    upSongName = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    upSongName.grid(row=7,column=4)
+    space1 = tkinter.Label(mdSongWindow, text=" ").grid(row=8,column=4)
+    Instructions3 = tkinter.Label(mdSongWindow, text="New Album Name")
+    Instructions3.grid(row=9,column=4)
+    Instructions3.config(font=("Helvetica", 14))
+    upSongAlbum = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    upSongAlbum.grid(row=10,column=4)
+    space2 = tkinter.Label(mdSongWindow, text=" ").grid(row=11,column=4)
+    Instructions4 = tkinter.Label(mdSongWindow, text="New Media Type")
+    Instructions4.grid(row=12,column=4)
+    Instructions4.config(font=("Helvetica", 14))
+    upSongMediaType = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    upSongMediaType.grid(row=13,column=4)
+    space3 = tkinter.Label(mdSongWindow, text=" ").grid(row=14,column=4)
+    Instructions5 = tkinter.Label(mdSongWindow, text="New Genre Name")
+    Instructions5.grid(row=15,column=4)
+    Instructions5.config(font=("Helvetica", 14))
+    upSongGenre = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    upSongGenre.grid(row=16,column=4)
+    space4 = tkinter.Label(mdSongWindow, text=" ").grid(row=17,column=4)
+    Instructions6 = tkinter.Label(mdSongWindow, text="New Composer")
+    Instructions6.grid(row=18,column=4)
+    Instructions6.config(font=("Helvetica", 14))
+    upSongComposer = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    upSongComposer.grid(row=19,column=4)
+    space5 = tkinter.Label(mdSongWindow, text=" ").grid(row=20,column=4)
+    Instructions7 = tkinter.Label(mdSongWindow, text="New Milliseconds")
+    Instructions7.grid(row=21,column=4)
+    Instructions7.config(font=("Helvetica", 14))
+    upSongMilliseconds = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    upSongMilliseconds.grid(row=22,column=4)
+    space6 = tkinter.Label(mdSongWindow, text=" ").grid(row=23,column=4)
+    Instructions8 = tkinter.Label(mdSongWindow, text="New Bytes")
+    Instructions8.grid(row=24,column=4)
+    Instructions8.config(font=("Helvetica", 14))
+    upSongBytes = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    upSongBytes.grid(row=25,column=4)
+    space7 = tkinter.Label(mdSongWindow, text=" ").grid(row=26,column=4)
+    Instructions9 = tkinter.Label(mdSongWindow, text="New Unit Price")
+    Instructions9.grid(row=27,column=4)
+    Instructions9.config(font=("Helvetica", 14))
+    upSongBytes = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    upSongBytes.grid(row=28,column=4)
+    space2 = tkinter.Label(mdSongWindow, text="").grid(row=29,column=2)
+    updateAlbumBtn = tkinter.Button(mdSongWindow, text="Update Song", padx=15, pady=5, bg="#c8c8c8")
+    updateAlbumBtn.grid(row=30,column=3)
+    space3 = tkinter.Label(mdSongWindow, text="").grid(row=31,column=3)
+    backModifyBtn = tkinter.Button(mdSongWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: loginView(con))
+    backModifyBtn.grid(row=32,column=3)
+    mdSongWindow.mainloop()
 
 def removeArtistView(currentUser):
     removeArtistWindow = tkinter.Tk()
@@ -560,6 +903,7 @@ def removeSongView(currentUser):
     removeSongWindow.mainloop()
 
 def deactivateSongView(currentUser):
+    global deactivateSongTitle, deactivateSongComposer
     deactivateWindow = tkinter.Tk()
     deactivateWindow.geometry("650x550")
     deactivateWindow.title("Deactivate Song")
@@ -584,7 +928,7 @@ def deactivateSongView(currentUser):
     deactivateSongComposer.pack()
     space2 = tkinter.Label(deactivateWindow, text="")
     space2.pack()
-    deactivateSongBtn = tkinter.Button(deactivateWindow,text="Deactivate Song",bg="#c8c8c8",padx=20,pady=10)
+    deactivateSongBtn = tkinter.Button(deactivateWindow,text="Deactivate Song",bg="#c8c8c8",padx=20,pady=10, command = lambda: songDeactivation(currentUser))
     deactivateSongBtn.pack()
     space3 = tkinter.Label(deactivateWindow, text="")
     space3.pack()
@@ -593,6 +937,7 @@ def deactivateSongView(currentUser):
     deactivateWindow.mainloop()
 
 def activateSongView(currentUser):
+    global activateSongTitle, activateSongComposer
     activateWindow = tkinter.Tk()
     activateWindow.geometry("650x550")
     activateWindow.title("Activate Song")
@@ -617,7 +962,7 @@ def activateSongView(currentUser):
     activateSongComposer.pack()
     space2 = tkinter.Label(activateWindow, text="")
     space2.pack()
-    activateSongBtn = tkinter.Button(activateWindow,text="Activate Song",bg="#c8c8c8",padx=20,pady=10)
+    activateSongBtn = tkinter.Button(activateWindow,text="Activate Song",bg="#c8c8c8",padx=20,pady=10, command = lambda: songActivation(currentUser))
     activateSongBtn.pack()
     space3 = tkinter.Label(activateWindow, text="")
     space3.pack()
@@ -626,6 +971,7 @@ def activateSongView(currentUser):
     activateWindow.mainloop()
 
 def userPermissionView(currentUser):
+    global permissionUsername, permissionNewNumber
     permissionWindow = tkinter.Tk()
     permissionWindow.geometry("650x700")
     permissionWindow.title("Permissions Manager")
@@ -664,7 +1010,7 @@ def userPermissionView(currentUser):
     permissionNewNumber.pack()
     space4 = tkinter.Label(permissionWindow, text="")
     space4.pack()
-    changePermissionBtn = tkinter.Button(permissionWindow,text="Activate Song",bg="#c8c8c8",padx=20,pady=10)
+    changePermissionBtn = tkinter.Button(permissionWindow,text="Activate Song",bg="#c8c8c8",padx=20,pady=10, command = lambda: changeUserPermission(currentUser))
     changePermissionBtn.pack()
     space3 = tkinter.Label(permissionWindow, text="")
     space3.pack()
