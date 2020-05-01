@@ -224,110 +224,126 @@ def changeUserPermission(currentUser):
         print("\n-> User Permission Failed!")
         
 def registerUser(con):
-    cur = con.cursor()
-    #try:
-    cur.execute("""SELECT CustomerId
-                    FROM Customer
-                    ORDER BY CustomerId DESC
-                    LIMIT 1""")
-    customerID = cur.fetchall()
-    for cid in customerID:
-        lastCustomerID = cid[0]
-        lastCustomerID += 1
-        supportRepId = random.randint(3,5)
-        rol = 1
-        Username = newuserEntry.get()
-        password = newpasswordEntry.get()
-        FirstName = newFirstNameEntry.get()
-        State = newStateEntry.get()
-        Fax = newFaxEntry.get()
-        Company = newCompanyEntry.get()
-        LastName = newLastNameEntry.get()
-        Address = newAddressEntry.get()
-        City = newCityEntry.get()
-        Country = newCountryEntry.get()
-        PostalCode = newPostalEntry.get()
-        Phone = newPhoneEntry.get()
-        Email = newEmailEntry.get()
-        
-        newCustomer = {'CustomerId':lastCustomerID,
-                       'FirstName':FirstName,
-                       'LastName':LastName,
-                       'Company':Company,
-                       'Address':Address,
-                       'City':City,
-                       'State':State,
-                       'Country':Country,
-                       'PostalCode':PostalCode,
-                       'Phone':Phone,
-                       'Fax':Fax,
-                       'Email':Email,
-                       'Username':Username,
-                       'password':password,
-                       'SupportRepId':supportRepId,
-                       'rol':rol}
-        cur.execute("""INSERT INTO Customer (CustomerId,FirstName, LastName, Company, Address, City, State, Country, PostalCode, Phone, Fax, Email, Username, password, SupportRepId, rol)
-                    VALUES (%(CustomerId)s,
-                    %(FirstName)s,
-                    %0(LastName)s,
-                    %(Company)s,
-                    %(Address)s,
-                    %(City)s,
-                    %(State)s,
-                    %(Country)s,
-                    %(PostalCode)s,
-                    %(Phone)s,
-                    %(Fax)s,
-                    %(Email)s,
-                    %(Username)s,
-                    %(password)s,
-                    %(SupportRepId)s,
-                    %(rol)s)""",newCustomer)
-        print("\n->User registered succesfully!")
-    #except:
-        #print("\n->Registration failed!")
+    try:
+        cur = con.cursor()
+        cur.execute("""SELECT CustomerId
+                        FROM Customer
+                        ORDER BY CustomerId DESC
+                        LIMIT 1""")
+        customerID = cur.fetchall()
+        for cid in customerID:
+            lastCustomerID = cid[0]
+            lastCustomerID += 1
+            supportRepId = random.randint(3,5)
+            rol = 1
+            Username = newuserEntry.get()
+            password = newpasswordEntry.get()
+            FirstName = newFirstNameEntry.get()
+            State = newStateEntry.get()
+            Fax = newFaxEntry.get()
+            Company = newCompanyEntry.get()
+            LastName = newLastNameEntry.get()
+            Address = newAddressEntry.get()
+            City = newCityEntry.get()
+            Country = newCountryEntry.get()
+            PostalCode = newPostalEntry.get()
+            Phone = newPhoneEntry.get()
+            Email = newEmailEntry.get()
+            
+            newCustomer = {'CustomerId':lastCustomerID,
+                           'FirstName':FirstName,
+                           'LastName':LastName,
+                           'Company':Company,
+                           'Address':Address,
+                           'City':City,
+                           'State':State,
+                           'Country':Country,
+                           'PostalCode':PostalCode,
+                           'Phone':Phone,
+                           'Fax':Fax,
+                           'Email':Email,
+                           'Username':Username,
+                           'password':password,
+                           'SupportRepId':supportRepId,
+                           'rol':rol}
+            cur.execute("""INSERT INTO Customer (CustomerId,
+                                                FirstName,
+                                                LastName,
+                                                Company,
+                                                Address,
+                                                City,
+                                                State,
+                                                Country,
+                                                PostalCode,
+                                                Phone,
+                                                Fax,
+                                                Email,
+                                                Username,
+                                                password,
+                                                SupportRepId,
+                                                rol)
+                        VALUES (%(CustomerId)s,
+                        %(FirstName)s,
+                        %(LastName)s,
+                        %(Company)s,
+                        %(Address)s,
+                        %(City)s,
+                        %(State)s,
+                        %(Country)s,
+                        %(PostalCode)s,
+                        %(Phone)s,
+                        %(Fax)s,
+                        %(Email)s,
+                        %(Username)s,
+                        %(password)s,
+                        %(SupportRepId)s,
+                        %(rol)s)""",newCustomer)
+            con.commit()
+            print("\n->User registered succesfully!")
+    except:
+        print("\n->Registration failed!")
 
 def loginUser(con):
-    #try:
-    message = "User not found"
-    currentUser = {}
-    for name, us in currentUser.items():
-        print(name + ": " + us)
-    user = userEntry.get()
-    password = passwordEntry.get()
-    cur = con.cursor()
-    cur.execute("""SELECT Username, password
-                    FROM Employee""")
-    admins = cur.fetchall()
-    for r in admins:
-        if user == r[0] and password == r[1]:
-            currentUser['name'] = user
-            currentUser['type'] = 'admin' 
-            adminView(currentUser)
-            
-    cur.execute("""SELECT Username, password
-                    FROM Customer""")
-    customers = cur.fetchall()
-    for r in customers:
-        if user == r[0] and password == r[1]:
-            userCredentials = {'username':user}
-            currentUser['name'] = user
-            cur.execute("""SELECT rol
-                            FROM Customer
-                            WHERE Username = %(username)s""",userCredentials)
-            rol = cur.fetchall()
-            for r in rol:
-                userType = r[0]                    
-                if userType == 1:
-                    currentUser['type'] = 'Tier 1'
-                elif userType == 2:
-                    currentUser['type'] = 'Tier 2'
-                elif userType == 3:
-                    currentUser['type'] = 'Tier 3'
-                else:
-                    currentUser['type'] = 'Custom'
-    #except:
-        #print("Login Failed")
+    try:
+        message = "User not found"
+        currentUser = {}
+        for name, us in currentUser.items():
+            print(name + ": " + us)
+        user = userEntry.get()
+        password = passwordEntry.get()
+        cur = con.cursor()
+        cur.execute("""SELECT Username, password
+                        FROM Employee""")
+        admins = cur.fetchall()
+        for r in admins:
+            if user == r[0] and password == r[1]:
+                currentUser['name'] = user
+                currentUser['type'] = 'admin' 
+                adminView(currentUser)
+                
+        cur.execute("""SELECT Username, password
+                        FROM Customer""")
+        customers = cur.fetchall()
+        for r in customers:
+            if user == r[0] and password == r[1]:
+                userCredentials = {'username':user}
+                currentUser['name'] = user
+                cur.execute("""SELECT rol
+                                FROM Customer
+                                WHERE Username = %(username)s""",userCredentials)
+                rol = cur.fetchall()
+                for r in rol:
+                    userType = r[0]                    
+                    if userType == 1:
+                        currentUser['type'] = 'Tier 1'
+                        customer1View(currentUser)
+                    elif userType == 2:
+                        currentUser['type'] = 'Tier 2'
+                        customer2View(currentUser)
+                    elif userType == 3:
+                        currentUser['type'] = 'Tier 3'
+    except:
+        print("Login Failed")
 
 ##################################################################################################################
                                         #Vistas del sistema
@@ -478,54 +494,157 @@ def loginView(con):
     loginBtn.pack()
     window.mainloop()
 
+def customer1View(currentUser):
+    customer1View = tkinter.Tk()
+    customer1View.geometry("1350x800")
+    customer1View.title("Customer Tier 1 View")
+    for i in range(7):
+        customer1View.columnconfigure(i,weight=1)
+    space00 = tkinter.Label(customer1View, text="").grid(row=0,column=3)
+    showUser = tkinter.Label(customer1View, text="Welcome " + currentUser['name'].title() + "!")
+    showUser.grid(row=1,column=1)
+    showUser.config(font=("Helvetica", 20, "bold"))
+    showUserType = tkinter.Label(customer1View, text="User type: Costumer " + currentUser['type'])
+    showUserType.grid(row=2,column=1)
+    showUserType.config(font=("Helvetica", 20, "bold"))
+    space0 = tkinter.Label(customer1View, text="").grid(row=3,column=1)
+    registerArtist = tkinter.Button(customer1View, text="Register New Artist", width=20, height=1, command = lambda: newArtistView(currentUser))
+    registerArtist.grid(row=4,column=1)
+    registerAlbum = tkinter.Button(customer1View, text="Register New Album", width=20, height=1, command = lambda: newAlbumView(currentUser))
+    registerAlbum.grid(row=5,column=1)
+    registerSong = tkinter.Button(customer1View, text="Register New Song", width=20, height=1, command = lambda: newSongView(currentUser))
+    registerSong.grid(row=6,column=1)
+    space1 = tkinter.Label(customer1View, text="").grid(row=7,column=1)
+    space2 = tkinter.Label(customer1View, text="").grid(row=8,column=1)
+    space3 = tkinter.Label(customer1View, text="").grid(row=9,column=1)
+    space4 = tkinter.Label(customer1View, text="").grid(row=10,column=1)
+    space5 = tkinter.Label(customer1View, text="").grid(row=11,column=1)
+    space6 = tkinter.Label(customer1View, text="").grid(row=12,column=1)
+    space7 = tkinter.Label(customer1View, text="").grid(row=13,column=1)
+    space8 = tkinter.Label(customer1View, text="").grid(row=14,column=1)
+    space9 = tkinter.Label(customer1View, text="").grid(row=15,column=1)
+    space10 = tkinter.Label(customer1View, text="").grid(row=16,column=1)
+    space11 = tkinter.Label(customer1View, text="").grid(row=17,column=1)
+    logoutBtn = tkinter.Button(customer1View, text="LOGOUT", width=20, height=1, bg="#ff9999", command = lambda: logOut(customer1View,currentUser))
+    logoutBtn.grid(row=18,column=1)
+
+def customer2View(currentUser):
+    customer2View = tkinter.Tk()
+    customer2View.geometry("1350x800")
+    customer2View.title("Customer Tier 1 View")
+    for i in range(7):
+        customer2View.columnconfigure(i,weight=1)
+    space00 = tkinter.Label(customer2View, text="").grid(row=0,column=3)
+    showUser = tkinter.Label(customer2View, text="Welcome " + currentUser['name'].title() + "!")
+    showUser.grid(row=1,column=1)
+    showUser.config(font=("Helvetica", 20, "bold"))
+    showUserType = tkinter.Label(customer2View, text="User type: Costumer " + currentUser['type'])
+    showUserType.grid(row=2,column=1)
+    showUserType.config(font=("Helvetica", 20, "bold"))
+    space0 = tkinter.Label(customer2View, text="").grid(row=3,column=1)
+    registerArtist = tkinter.Button(customer2View, text="Register New Artist", width=20, height=1, command = lambda: newArtistView(currentUser))
+    registerArtist.grid(row=4,column=1)
+    registerAlbum = tkinter.Button(customer2View, text="Register New Album", width=20, height=1, command = lambda: newAlbumView(currentUser))
+    registerAlbum.grid(row=5,column=1)
+    registerSong = tkinter.Button(customer2View, text="Register New Song", width=20, height=1, command = lambda: newSongView(currentUser))
+    registerSong.grid(row=6,column=1)
+    modifyArtist = tkinter.Button(customer2View, text="Modify Artist", width=20, height=1, command = lambda: modifyArtistView(currentUser))
+    modifyArtist.grid(row=7,column=1)
+    modifyAlbum = tkinter.Button(customer2View, text="Modify Album", width=20, height=1, command = lambda: modifyAlbumView(currentUser))
+    modifyAlbum.grid(row=8,column=1)
+    modifySong = tkinter.Button(customer2View, text="Modify Song", width=20, height=1, command = lambda: modifySongView(currentUser))
+    modifySong.grid(row=9,column=1)
+    space0 = tkinter.Label(customer2View, text="").grid(row=10,column=1)
+    space0 = tkinter.Label(customer2View, text="").grid(row=11,column=1)
+    space0 = tkinter.Label(customer2View, text="").grid(row=12,column=1)
+    space0 = tkinter.Label(customer2View, text="").grid(row=13,column=1)
+    space0 = tkinter.Label(customer2View, text="").grid(row=14,column=1)
+    space0 = tkinter.Label(customer2View, text="").grid(row=15,column=1)
+    space0 = tkinter.Label(customer2View, text="").grid(row=16,column=1)
+    space0 = tkinter.Label(customer2View, text="").grid(row=17,column=1)
+    logoutBtn = tkinter.Button(customer2View, text="LOGOUT", width=20, height=1, bg="#ff9999", command = lambda: logOut(customer2View,currentUser))
+    logoutBtn.grid(row=18,column=1)
+    customer2View.mainloop()
+
+def customer3View(currentUser):
+    customer3View = tkinter.Tk()
+    customer3View.geometry("1350x800")
+    customer3View.title("Customer Tier 1 View")
+    for i in range(7):
+        customer3View.columnconfigure(i,weight=1)
+    space00 = tkinter.Label(customer3View, text="").grid(row=0,column=3)
+    showUser = tkinter.Label(customer3View, text="Welcome " + currentUser['name'].title() + "!")
+    showUser.grid(row=1,column=1)
+    showUser.config(font=("Helvetica", 20, "bold"))
+    showUserType = tkinter.Label(customer3View, text="User type: Costumer " + currentUser['type'])
+    showUserType.grid(row=2,column=1)
+    showUserType.config(font=("Helvetica", 20, "bold"))
+    space0 = tkinter.Label(customer3View, text="").grid(row=3,column=1)
+    registerArtist = tkinter.Button(customer3View, text="Register New Artist", width=20, height=1, command = lambda: newArtistView(currentUser))
+    registerArtist.grid(row=4,column=1)
+    registerAlbum = tkinter.Button(customer3View, text="Register New Album", width=20, height=1, command = lambda: newAlbumView(currentUser))
+    registerAlbum.grid(row=5,column=1)
+    registerSong = tkinter.Button(customer3View, text="Register New Song", width=20, height=1, command = lambda: newSongView(currentUser))
+    registerSong.grid(row=6,column=1)
+    modifyArtist = tkinter.Button(customer3View, text="Modify Artist", width=20, height=1, command = lambda: modifyArtistView(currentUser))
+    modifyArtist.grid(row=7,column=1)
+    modifyAlbum = tkinter.Button(customer3View, text="Modify Album", width=20, height=1, command = lambda: modifyAlbumView(currentUser))
+    modifyAlbum.grid(row=8,column=1)
+    modifySong = tkinter.Button(customer3View, text="Modify Song", width=20, height=1, command = lambda: modifySongView(currentUser))
+    modifySong.grid(row=9,column=1)
+    deactivateSong = tkinter.Button(customer3View, text="Deactivate Song", width=20, height=1, command = lambda: deactivateSongView(currentUser))
+    deactivateSong.grid(row=13,column=1)
+    activateSong = tkinter.Button(customer3View, text="Activate Song", width=20, height=1, command = lambda: activateSongView(currentUser))
+    activateSong.grid(row=14,column=1)
+    space0 = tkinter.Label(customer3View, text="").grid(row=15,column=1)
+    space0 = tkinter.Label(customer3View, text="").grid(row=16,column=1)
+    space0 = tkinter.Label(customer3View, text="").grid(row=17,column=1)
+    logoutBtn = tkinter.Button(customer3View, text="LOGOUT", width=20, height=1, bg="#ff9999", command = lambda: logOut(customer3View,currentUser))
+    logoutBtn.grid(row=18,column=1)
+    customer2View.mainloop()
+    
 def adminView(currentUser):
     adminWindow = tkinter.Tk()
     adminWindow.geometry("1350x800")
     adminWindow.title("Admin View")
-    for name, us in currentUser.items():
-        print(name + ": " + us)
-    space00 = tkinter.Label(adminWindow, text="")
-    space00.pack()
+    for i in range(7):
+        adminWindow.columnconfigure(i,weight=1)
+    space00 = tkinter.Label(adminWindow, text="").grid(row=0,column=3)
     showUser = tkinter.Label(adminWindow, text="Welcome " + currentUser['name'].title() + "!")
-    showUser.config(font=("Helvetica", 26, "bold"))
-    showUser.pack()
+    showUser.grid(row=1,column=1)
+    showUser.config(font=("Helvetica", 20, "bold"))
     showUserType = tkinter.Label(adminWindow, text="User type: " + currentUser['type'])
+    showUserType.grid(row=2,column=1)
     showUserType.config(font=("Helvetica", 20, "bold"))
-    showUserType.pack()
-    space0 = tkinter.Label(adminWindow, text="")
-    space0.pack()
-    space1 = tkinter.Label(adminWindow, text="")
-    space1.pack()
+    space0 = tkinter.Label(adminWindow, text="").grid(row=3,column=1)
     registerArtist = tkinter.Button(adminWindow, text="Register New Artist", width=20, height=1, command = lambda: newArtistView(currentUser))
-    registerArtist.pack()
+    registerArtist.grid(row=4,column=1)
     registerAlbum = tkinter.Button(adminWindow, text="Register New Album", width=20, height=1, command = lambda: newAlbumView(currentUser))
-    registerAlbum.pack()
+    registerAlbum.grid(row=5,column=1)
     registerSong = tkinter.Button(adminWindow, text="Register New Song", width=20, height=1, command = lambda: newSongView(currentUser))
-    registerSong.pack()
+    registerSong.grid(row=6,column=1)
     modifyArtist = tkinter.Button(adminWindow, text="Modify Artist", width=20, height=1, command = lambda: modifyArtistView(currentUser))
-    modifyArtist.pack()
+    modifyArtist.grid(row=7,column=1)
     modifyAlbum = tkinter.Button(adminWindow, text="Modify Album", width=20, height=1, command = lambda: modifyAlbumView(currentUser))
-    modifyAlbum.pack()
+    modifyAlbum.grid(row=8,column=1)
     modifySong = tkinter.Button(adminWindow, text="Modify Song", width=20, height=1, command = lambda: modifySongView(currentUser))
-    modifySong.pack()
+    modifySong.grid(row=9,column=1)
     removeArtist = tkinter.Button(adminWindow, text="Remove Artist", width=20, height=1, command = lambda: removeArtistView(currentUser))
-    removeArtist.pack()
+    removeArtist.grid(row=10,column=1)
     removeAlbum = tkinter.Button(adminWindow, text="Remove Album", width=20, height=1, command = lambda: removeAlbumView(currentUser))
-    removeAlbum.pack()
+    removeAlbum.grid(row=11,column=1)
     removeSong = tkinter.Button(adminWindow, text="Remove Song", width=20, height=1, command = lambda: removeSongView(currentUser))
-    removeSong.pack()
+    removeSong.grid(row=12,column=1)
     deactivateSong = tkinter.Button(adminWindow, text="Deactivate Song", width=20, height=1, command = lambda: deactivateSongView(currentUser))
-    deactivateSong.pack()
+    deactivateSong.grid(row=13,column=1)
     activateSong = tkinter.Button(adminWindow, text="Activate Song", width=20, height=1, command = lambda: activateSongView(currentUser))
-    activateSong.pack()
+    activateSong.grid(row=14,column=1)
     manageUsers = tkinter.Button(adminWindow, text="Change User permission", width=20, height=1, command = lambda: userPermissionView(currentUser))
-    manageUsers.pack()
-    space2 = tkinter.Label(adminWindow, text="")
-    space2.pack()
-    space3 = tkinter.Label(adminWindow, text="")
-    space3.pack()
-    logoutBtn = tkinter.Button(adminWindow, text="LOGOUT", width=20, height=1, command = lambda: logOut(adminWindow,currentUser))
-    logoutBtn.pack()
+    manageUsers.grid(row=15,column=1)
+    space2 = tkinter.Label(adminWindow, text="").grid(row=16,column=1)
+    space3 = tkinter.Label(adminWindow, text="").grid(row=17,column=1)
+    logoutBtn = tkinter.Button(adminWindow, text="LOGOUT", width=20, height=1, bg="#ff9999", command = lambda: logOut(adminWindow,currentUser))
+    logoutBtn.grid(row=18,column=1)
     adminWindow.mainloop()
 
 def newArtistView(currentUser):
