@@ -1,5 +1,7 @@
 import tkinter
 from tkinter import font
+import pymongo
+import webbrowser
 import psycopg2
 import random
 
@@ -214,7 +216,9 @@ def changeUserPermission(currentUser):
         for permission in permissions:
             if permission[0] == newPer:
                 print("\n-> User Already With That Permission!")
-            else:
+            elif newPer > 3:
+                print("\n-> Please enter a permission between 1 and 3!")
+            else:                
                 cur.execute("""UPDATE customer
                         SET rol = %(rol)s
                         WHERE username = %(username)s""",dictionary)
@@ -222,7 +226,37 @@ def changeUserPermission(currentUser):
                 print("\n-> Customer Permission Updated!")
     except:
         print("\n-> User Permission Failed!")
-        
+
+def listenSongsFunction(currentUser):
+    cur = con.cursor()
+    username = currentUser['name']
+    userType = currentUser['type']
+    if userType == "admin":
+        print("Admin user!")
+    else:
+        dictionary1 = {'username':username}
+        cur.execute("""select customerid
+                    from customer 
+                    where Username = %(username)s 
+                    limit 1;""",dictionary1)
+        rows1 = cur.fetchall()
+        customerID = 0
+        for r in rows1:
+            customerID = r[0]
+            dictionary2 = {'customerID':customerID}
+            cur.execute("""SELECT track.songURL
+                    from (select invoiceline.invoiceid as INVOICELINEID, invoiceline.trackid as INVOICELINETRACKID
+                    from invoiceline) mid
+                    left join track on track.trackid = mid.INVOICELINETRACKID
+                    left join invoice on invoice.invoiceid = mid.INVOICELINEID
+                    where invoice.customerid = %(customerID)s
+                    LIMIT 1;""",dictionary2)
+            rows = cur.fetchall()
+            for r in rows:
+                new=2
+                url=r[0]
+                webbrowser.open(url,new=new)
+
 def registerUser(con):
     try:
         cur = con.cursor()
@@ -304,46 +338,47 @@ def registerUser(con):
         print("\n->Registration failed!")
 
 def loginUser(con):
-    try:
-        message = "User not found"
-        currentUser = {}
-        for name, us in currentUser.items():
-            print(name + ": " + us)
-        user = userEntry.get()
-        password = passwordEntry.get()
-        cur = con.cursor()
-        cur.execute("""SELECT Username, password
-                        FROM Employee""")
-        admins = cur.fetchall()
-        for r in admins:
-            if user == r[0] and password == r[1]:
-                currentUser['name'] = user
-                currentUser['type'] = 'admin' 
-                adminView(currentUser)
-                
-        cur.execute("""SELECT Username, password
-                        FROM Customer""")
-        customers = cur.fetchall()
-        for r in customers:
-            if user == r[0] and password == r[1]:
-                userCredentials = {'username':user}
-                currentUser['name'] = user
-                cur.execute("""SELECT rol
-                                FROM Customer
-                                WHERE Username = %(username)s""",userCredentials)
-                rol = cur.fetchall()
-                for r in rol:
-                    userType = r[0]                    
-                    if userType == 1:
-                        currentUser['type'] = 'Tier 1'
-                        customer1View(currentUser)
-                    elif userType == 2:
-                        currentUser['type'] = 'Tier 2'
-                        customer2View(currentUser)
-                    elif userType == 3:
-                        currentUser['type'] = 'Tier 3'
-    except:
-        print("Login Failed")
+    #try:
+    message = "User not found"
+    currentUser = {}
+    for name, us in currentUser.items():
+        print(name + ": " + us)
+    user = userEntry.get()
+    password = passwordEntry.get()
+    cur = con.cursor()
+    cur.execute("""SELECT Username, password
+                    FROM Employee""")
+    admins = cur.fetchall()
+    for r in admins:
+        if user == r[0] and password == r[1]:
+            currentUser['name'] = user
+            currentUser['type'] = 'admin' 
+            adminView(currentUser)
+            
+    cur.execute("""SELECT Username, password
+                    FROM Customer""")
+    customers = cur.fetchall()
+    for r in customers:
+        if user == r[0] and password == r[1]:
+            userCredentials = {'username':user}
+            currentUser['name'] = user
+            cur.execute("""SELECT rol
+                            FROM Customer
+                            WHERE Username = %(username)s""",userCredentials)
+            rol = cur.fetchall()
+            for r in rol:
+                userType = r[0]                    
+                if userType == 1:
+                    currentUser['type'] = 'Tier 1'
+                    customer1View(currentUser)
+                elif userType == 2:
+                    currentUser['type'] = 'Tier 2'
+                    customer2View(currentUser)
+                elif userType == 3:
+                    currentUser['type'] = 'Tier 3'
+                    customer3View(currentUser)
+    #except:
+        #print("Login Failed")
 
 ##################################################################################################################
                                         #Vistas del sistema
@@ -514,6 +549,27 @@ def customer1View(currentUser):
     registerAlbum.grid(row=5,column=1)
     registerSong = tkinter.Button(customer1View, text="Register New Song", width=20, height=1, command = lambda: newSongView(currentUser))
     registerSong.grid(row=6,column=1)
+    mostAlbums = tkinter.Button(customer1View, text="Artist with most Albums",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    mostAlbums.grid(row=4,column=2)
+    mostGenres = tkinter.Button(customer1View, text="Genres with most Songs",width=20,height=1, command = lambda: mostGenresView(currentUser))
+    mostGenres.grid(row=5,column=2)
+    playlistDuration = tkinter.Button(customer1View, text="Playlist Duration",width=20,height=1, command = lambda: playlistDurationView(currentUser))
+    playlistDuration.grid(row=6,column=2)
+    longestSongs = tkinter.Button(customer1View, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(currentUser))
+    longestSongs.grid(row=7,column=2)
+    usersSongs = tkinter.Button(customer1View, text="Users Songs",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    usersSongs.grid(row=8,column=2)
+    averageGenre = tkinter.Button(customer1View, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(currentUser))
+    averageGenre.grid(row=9,column=2)
+    playlistArtists = tkinter.Button(customer1View, text="Playlist Artists",width=20,height=1, command = lambda: playlistArtistsView(currentUser))
+    playlistArtists.grid(row=10,column=2)
+    diverseArtists = tkinter.Button(customer1View, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(currentUser))
+    diverseArtists.grid(row=11,column=2)
+    listenSongs = tkinter.Button(customer1View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    listenSongs.grid(row=4,column=3)
+    space4 = tkinter.Label(customer1View, text="").grid(row=5,column=3)
+    purchaseSongs = tkinter.Button(customer1View, text="Purchase Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    purchaseSongs.grid(row=6,column=3)
     space1 = tkinter.Label(customer1View, text="").grid(row=7,column=1)
     space2 = tkinter.Label(customer1View, text="").grid(row=8,column=1)
     space3 = tkinter.Label(customer1View, text="").grid(row=9,column=1)
@@ -554,6 +610,27 @@ def customer2View(currentUser):
     modifyAlbum.grid(row=8,column=1)
     modifySong = tkinter.Button(customer2View, text="Modify Song", width=20, height=1, command = lambda: modifySongView(currentUser))
     modifySong.grid(row=9,column=1)
+    mostAlbums = tkinter.Button(customer2View, text="Artist with most Albums",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    mostAlbums.grid(row=4,column=2)
+    mostGenres = tkinter.Button(customer2View, text="Genres with most Songs",width=20,height=1, command = lambda: mostGenresView(currentUser))
+    mostGenres.grid(row=5,column=2)
+    playlistDuration = tkinter.Button(customer2View, text="Playlist Duration",width=20,height=1, command = lambda: playlistDurationView(currentUser))
+    playlistDuration.grid(row=6,column=2)
+    longestSongs = tkinter.Button(customer2View, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(currentUser))
+    longestSongs.grid(row=7,column=2)
+    usersSongs = tkinter.Button(customer2View, text="Users Songs",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    usersSongs.grid(row=8,column=2)
+    averageGenre = tkinter.Button(customer2View, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(currentUser))
+    averageGenre.grid(row=9,column=2)
+    playlistArtists = tkinter.Button(customer2View, text="Playlist Artists",width=20,height=1, command = lambda: playlistArtistsView(currentUser))
+    playlistArtists.grid(row=10,column=2)
+    diverseArtists = tkinter.Button(customer2View, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(currentUser))
+    diverseArtists.grid(row=11,column=2)
+    listenSongs = tkinter.Button(customer2View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    listenSongs.grid(row=4,column=3)
+    space4 = tkinter.Label(customer2View, text="").grid(row=5,column=3)
+    purchaseSongs = tkinter.Button(customer2View, text="Purchase Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    purchaseSongs.grid(row=6,column=3)
     space0 = tkinter.Label(customer2View, text="").grid(row=10,column=1)
     space0 = tkinter.Label(customer2View, text="").grid(row=11,column=1)
     space0 = tkinter.Label(customer2View, text="").grid(row=12,column=1)
@@ -596,16 +673,37 @@ def customer3View(currentUser):
     deactivateSong.grid(row=13,column=1)
     activateSong = tkinter.Button(customer3View, text="Activate Song", width=20, height=1, command = lambda: activateSongView(currentUser))
     activateSong.grid(row=14,column=1)
+    mostAlbums = tkinter.Button(customer3View, text="Artist with most Albums",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    mostAlbums.grid(row=4,column=2)
+    mostGenres = tkinter.Button(customer3View, text="Genres with most Songs",width=20,height=1, command = lambda: mostGenresView(currentUser))
+    mostGenres.grid(row=5,column=2)
+    playlistDuration = tkinter.Button(customer3View, text="Playlist Duration",width=20,height=1, command = lambda: playlistDurationView(currentUser))
+    playlistDuration.grid(row=6,column=2)
+    longestSongs = tkinter.Button(customer3View, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(currentUser))
+    longestSongs.grid(row=7,column=2)
+    usersSongs = tkinter.Button(customer3View, text="Users Songs",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    usersSongs.grid(row=8,column=2)
+    averageGenre = tkinter.Button(customer3View, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(currentUser))
+    averageGenre.grid(row=9,column=2)
+    playlistArtists = tkinter.Button(customer3View, text="Playlist Artists",width=20,height=1, command = lambda: playlistArtistsView(currentUser))
+    playlistArtists.grid(row=10,column=2)
+    diverseArtists = tkinter.Button(customer3View, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(currentUser))
+    diverseArtists.grid(row=11,column=2)
+    listenSongs = tkinter.Button(customer3View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    listenSongs.grid(row=4,column=3)
+    space4 = tkinter.Label(customer3View, text="").grid(row=5,column=3)
+    purchaseSongs = tkinter.Button(customer3View, text="Purchase Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    purchaseSongs.grid(row=6,column=3)
     space0 = tkinter.Label(customer3View, text="").grid(row=15,column=1)
     space0 = tkinter.Label(customer3View, text="").grid(row=16,column=1)
     space0 = tkinter.Label(customer3View, text="").grid(row=17,column=1)
     logoutBtn = tkinter.Button(customer3View, text="LOGOUT", width=20, height=1, bg="#ff9999", command = lambda: logOut(customer3View,currentUser))
     logoutBtn.grid(row=18,column=1)
-    customer2View.mainloop()
+    customer3View.mainloop()
     
 def adminView(currentUser):
     adminWindow = tkinter.Tk()
-    adminWindow.geometry("1350x800")
+    adminWindow.geometry("1250x800")
     adminWindow.title("Admin View")
     for i in range(7):
         adminWindow.columnconfigure(i,weight=1)
@@ -643,6 +741,33 @@ def adminView(currentUser):
     manageUsers.grid(row=15,column=1)
     space2 = tkinter.Label(adminWindow, text="").grid(row=16,column=1)
     space3 = tkinter.Label(adminWindow, text="").grid(row=17,column=1)
+    mostAlbums = tkinter.Button(adminWindow, text="Artist with most Albums",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    mostAlbums.grid(row=4,column=2)
+    mostGenres = tkinter.Button(adminWindow, text="Genres with most Songs",width=20,height=1, command = lambda: mostGenresView(currentUser))
+    mostGenres.grid(row=5,column=2)
+    playlistDuration = tkinter.Button(adminWindow, text="Playlist Duration",width=20,height=1, command = lambda: playlistDurationView(currentUser))
+    playlistDuration.grid(row=6,column=2)
+    longestSongs = tkinter.Button(adminWindow, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(currentUser))
+    longestSongs.grid(row=7,column=2)
+    usersSongs = tkinter.Button(adminWindow, text="Users Songs",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    usersSongs.grid(row=8,column=2)
+    averageGenre = tkinter.Button(adminWindow, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(currentUser))
+    averageGenre.grid(row=9,column=2)
+    playlistArtists = tkinter.Button(adminWindow, text="Playlist Artists",width=20,height=1, command = lambda: playlistArtistsView(currentUser))
+    playlistArtists.grid(row=10,column=2)
+    diverseArtists = tkinter.Button(adminWindow, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(currentUser))
+    diverseArtists.grid(row=11,column=2)
+    listenSongs = tkinter.Button(adminWindow, text="Listen Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    listenSongs.grid(row=4,column=3)
+    space4 = tkinter.Label(adminWindow, text="").grid(row=5,column=3)
+    purchaseSongs = tkinter.Button(adminWindow, text="Purchase Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    purchaseSongs.grid(row=6,column=3)
+    space5 = tkinter.Label(adminWindow, text="").grid(row=7,column=3)
+    trackLogs = tkinter.Button(adminWindow, text="Song Logs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    trackLogs.grid(row=8,column=3)
+    space6 = tkinter.Label(adminWindow, text="").grid(row=9,column=3)
+    purchaseSimulator = tkinter.Button(adminWindow, text="Purchase Simulator",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    purchaseSimulator.grid(row=10,column=3)
     logoutBtn = tkinter.Button(adminWindow, text="LOGOUT", width=20, height=1, bg="#ff9999", command = lambda: logOut(adminWindow,currentUser))
     logoutBtn.grid(row=18,column=1)
     adminWindow.mainloop()
@@ -1136,7 +1261,379 @@ def userPermissionView(currentUser):
     backPermissionBtn = tkinter.Button(permissionWindow,text="Back",bg="#c8c8c8",padx=20,pady=10)
     backPermissionBtn.pack()
     permissionWindow.mainloop()
-    
+
+def mostAlbumsView(currentUser):
+    cur = con.cursor()
+    mostAlbumsView = tkinter.Tk()
+    mostAlbumsView.geometry("1000x500")
+    for i in range(5):
+        mostAlbumsView.columnconfigure(i,weight=1)
+    mostAlbumsView.title("Most Albums View")
+    space00 = tkinter.Label(mostAlbumsView, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(mostAlbumsView, text="Artists with most Albums")
+    windowTitle.config(font=("Helvetica",15,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(mostAlbumsView, text="").grid(row=2,column=3)
+    subTitle0 = tkinter.Label(mostAlbumsView, text="Number")
+    subTitle0.config(font=("Helvetica",15,"bold"))
+    subTitle0.grid(row=3,column=1)
+    subTitle = tkinter.Label(mostAlbumsView, text="Artist")
+    subTitle.config(font=("Helvetica",15,"bold"))
+    subTitle.grid(row=3,column=2)
+    subTitle2 = tkinter.Label(mostAlbumsView, text="Number of albums")
+    subTitle2.config(font=("Helvetica",15,"bold"))
+    subTitle2.grid(row=3,column=3)
+    cur.execute("""select a.name as "Nombre", t.count as "Numero de Albumes"
+                from (select artistid, count(artistid) as count
+                from album
+                group by artistid) t
+                join artist a on a.artistid = t.artistid
+                order by t.count desc
+                limit 5""")
+    rows = cur.fetchall()
+    i = 4
+    x = 1
+    for r in rows:
+        number = tkinter.Label(mostAlbumsView, text=x)
+        number.config(font=("Helvetica",15))
+        number.grid(row=i,column=1)
+        artist = tkinter.Label(mostAlbumsView,text=r[0])
+        artist.config(font=("Helvetica",15))
+        artist.grid(row=i,column=2)
+        albums = tkinter.Label(mostAlbumsView,text=str(r[1]))
+        albums.config(font=("Helvetica",15))
+        albums.grid(row=i,column=3)
+        i += 1
+        x += 1
+    space1 = tkinter.Label(mostAlbumsView, text="").grid(row=9,column=3)
+    space2 = tkinter.Label(mostAlbumsView, text="").grid(row=10,column=3)
+    backModifyBtn = tkinter.Button(mostAlbumsView, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn.grid(row=11,column=2)
+    mostAlbumsView.mainloop()
+
+def mostGenresView(currentUser):
+    cur = con.cursor()
+    mostGenresView = tkinter.Tk()
+    mostGenresView.geometry("1000x500")
+    for i in range(5):
+        mostGenresView.columnconfigure(i,weight=1)
+    mostGenresView.title("Most Genres View")
+    space00 = tkinter.Label(mostGenresView, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(mostGenresView, text="Genres with most Songs")
+    windowTitle.config(font=("Helvetica",15,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(mostGenresView, text="").grid(row=2,column=3)
+    subTitle0 = tkinter.Label(mostGenresView, text="Number")
+    subTitle0.config(font=("Helvetica",15,"bold"))
+    subTitle0.grid(row=3,column=1)
+    subTitle = tkinter.Label(mostGenresView, text="Genre")
+    subTitle.config(font=("Helvetica",15,"bold"))
+    subTitle.grid(row=3,column=2)
+    subTitle2 = tkinter.Label(mostGenresView, text="Number of Songs")
+    subTitle2.config(font=("Helvetica",15,"bold"))
+    subTitle2.grid(row=3,column=3)
+    cur.execute("""select g.name as "Genero", t.counter as "Numero de Canciones"
+                from (select genreid, count(genreid) as counter
+                from track
+                group by genreid) t
+                left join genre g on g.genreid = t.genreid
+                order by t.counter desc
+                LIMIT 5;""")
+    rows = cur.fetchall()
+    i = 4
+    x = 1
+    for r in rows:
+        number = tkinter.Label(mostGenresView, text=x)
+        number.config(font=("Helvetica",15))
+        number.grid(row=i,column=1)
+        artist = tkinter.Label(mostGenresView,text=r[0])
+        artist.config(font=("Helvetica",15))
+        artist.grid(row=i,column=2)
+        albums = tkinter.Label(mostGenresView,text=str(r[1]))
+        albums.config(font=("Helvetica",15))
+        albums.grid(row=i,column=3)
+        i += 1
+        x += 1
+    space1 = tkinter.Label(mostGenresView, text="").grid(row=9,column=3)
+    space2 = tkinter.Label(mostGenresView, text="").grid(row=10,column=3)
+    backModifyBtn = tkinter.Button(mostGenresView, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn.grid(row=11,column=2)
+    mostGenresView.mainloop()
+
+def playlistDurationView(currentUser):
+    cur = con.cursor()
+    playlistDuration = tkinter.Tk()
+    playlistDuration.geometry("1000x500")
+    for i in range(5):
+        playlistDuration.columnconfigure(i,weight=1)
+    playlistDuration.title("Playlist Duration")
+    space00 = tkinter.Label(playlistDuration, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(playlistDuration, text="Playlist Duration")
+    windowTitle.config(font=("Helvetica",15,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(playlistDuration, text="").grid(row=2,column=3)
+    subTitle0 = tkinter.Label(playlistDuration, text="Number")
+    subTitle0.config(font=("Helvetica",15,"bold"))
+    subTitle0.grid(row=3,column=1)
+    subTitle = tkinter.Label(playlistDuration, text="Playlist Name")
+    subTitle.config(font=("Helvetica",15,"bold"))
+    subTitle.grid(row=3,column=2)
+    subTitle2 = tkinter.Label(playlistDuration, text="Duration (minutes)")
+    subTitle2.config(font=("Helvetica",15,"bold"))
+    subTitle2.grid(row=3,column=3)
+    cur.execute("""select p.playlistid as "ID", p.name as "Nombre del Album", sum(t.milliseconds*0.000016666666) as "Tiempo de Duracion (Segundos)"
+                from (select playlistid, trackid
+                from playlisttrack) pt
+                join track t on t.trackid = pt.trackid
+                join playlist p on pt.playlistid = p.playlistid
+                group by p.playlistid
+                limit 7;""")
+    rows = cur.fetchall()
+    i = 4
+    x = 1
+    for r in rows:
+        number = tkinter.Label(playlistDuration, text=x)
+        number.config(font=("Helvetica",15))
+        number.grid(row=i,column=1)
+        artist = tkinter.Label(playlistDuration,text=r[1])
+        artist.config(font=("Helvetica",15))
+        artist.grid(row=i,column=2)
+        albums = tkinter.Label(playlistDuration,text=str(r[2]))
+        albums.config(font=("Helvetica",15))
+        albums.grid(row=i,column=3)
+        i += 1
+        x += 1
+    space1 = tkinter.Label(playlistDuration, text="").grid(row=11,column=3)
+    space2 = tkinter.Label(playlistDuration, text="").grid(row=12,column=3)
+    backModifyBtn = tkinter.Button(playlistDuration, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn.grid(row=13,column=2)
+    playlistDuration.mainloop()
+
+def longestSongsView(currentUser):
+    cur = con.cursor()
+    longestSongs = tkinter.Tk()
+    longestSongs.geometry("1400x500")
+    for i in range(5):
+        longestSongs.columnconfigure(i,weight=1)
+    longestSongs.title("Playlist Duration")
+    space00 = tkinter.Label(longestSongs, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(longestSongs, text="Longest Songs")
+    windowTitle.config(font=("Helvetica",15,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(longestSongs, text="").grid(row=2,column=3)
+    subTitle0 = tkinter.Label(longestSongs, text="Number")
+    subTitle0.config(font=("Helvetica",15,"bold"))
+    subTitle0.grid(row=3,column=1)
+    subTitle = tkinter.Label(longestSongs, text="Song Name")
+    subTitle.config(font=("Helvetica",15,"bold"))
+    subTitle.grid(row=3,column=2)
+    subTitle2 = tkinter.Label(longestSongs, text="Duration (minutes)")
+    subTitle2.config(font=("Helvetica",15,"bold"))
+    subTitle2.grid(row=3,column=3)
+    subTitle3 = tkinter.Label(longestSongs, text="Artist Name")
+    subTitle3.config(font=("Helvetica",15,"bold"))
+    subTitle3.grid(row=3,column=4)
+    cur.execute("""select t.name as "Nombre", t.milliseconds*0.000016666666 as "Tiempo de Duracion (Minutos)", ar.name as "Artista/s"
+                from album a
+                join track t on a.albumid = t.albumid
+                join artist ar on a.artistid = ar.artistid
+                order by t.milliseconds desc
+                limit 5;""")
+    rows = cur.fetchall()
+    i = 4
+    x = 1
+    for r in rows:
+        number = tkinter.Label(longestSongs, text=x)
+        number.config(font=("Helvetica",15))
+        number.grid(row=i,column=1)
+        song = tkinter.Label(longestSongs,text=r[0])
+        song.config(font=("Helvetica",15))
+        song.grid(row=i,column=2)
+        duration = tkinter.Label(longestSongs,text=str(r[1]))
+        duration.config(font=("Helvetica",15))
+        duration.grid(row=i,column=3)
+        artist = tkinter.Label(longestSongs,text=str(r[2]))
+        artist.config(font=("Helvetica",15))
+        artist.grid(row=i,column=4)
+        i += 1
+        x += 1
+    space1 = tkinter.Label(longestSongs, text="").grid(row=9,column=3)
+    space2 = tkinter.Label(longestSongs, text="").grid(row=10,column=3)
+    backModifyBtn = tkinter.Button(longestSongs, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn.grid(row=11,column=2)
+    longestSongs.mainloop()
+
+def averageGDView(currentUser):
+    cur = con.cursor()
+    averageGD = tkinter.Tk()
+    averageGD.geometry("1000x500")
+    for i in range(5):
+        averageGD.columnconfigure(i,weight=1)
+    averageGD.title("Average Genre Duration")
+    space00 = tkinter.Label(averageGD, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(averageGD, text="Average Genre Duration")
+    windowTitle.config(font=("Helvetica",15,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(averageGD, text="").grid(row=2,column=3)
+    subTitle0 = tkinter.Label(averageGD, text="Number")
+    subTitle0.config(font=("Helvetica",15,"bold"))
+    subTitle0.grid(row=3,column=1)
+    subTitle = tkinter.Label(averageGD, text="Genre")
+    subTitle.config(font=("Helvetica",15,"bold"))
+    subTitle.grid(row=3,column=2)
+    subTitle2 = tkinter.Label(averageGD, text="Average Length (minutes)")
+    subTitle2.config(font=("Helvetica",15,"bold"))
+    subTitle2.grid(row=3,column=3)
+    cur.execute("""select g.name as "Nombre", t.average as "Promedio de Duracion (Minutos)"
+                from (select genreid, avg(milliseconds)*0.000016666666 average
+                from track
+                group by genreid) t
+                join genre g on g.genreid = t.genreid
+                order by t.average desc
+                limit 7;""")
+    rows = cur.fetchall()
+    i = 4
+    x = 1
+    for r in rows:
+        number = tkinter.Label(averageGD, text=x)
+        number.config(font=("Helvetica",15))
+        number.grid(row=i,column=1)
+        genre = tkinter.Label(averageGD,text=r[0])
+        genre.config(font=("Helvetica",15))
+        genre.grid(row=i,column=2)
+        duration = tkinter.Label(averageGD,text=str(r[1]))
+        duration.config(font=("Helvetica",15))
+        duration.grid(row=i,column=3)
+        i += 1
+        x += 1
+    space1 = tkinter.Label(averageGD, text="").grid(row=11,column=3)
+    space2 = tkinter.Label(averageGD, text="").grid(row=12,column=3)
+    backModifyBtn = tkinter.Button(averageGD, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn.grid(row=13,column=2)
+    averageGD.mainloop()
+
+def playlistArtistsView(currentUser):
+    cur = con.cursor()
+    playlistArtists = tkinter.Tk()
+    playlistArtists.geometry("1000x500")
+    for i in range(5):
+        playlistArtists.columnconfigure(i,weight=1)
+    playlistArtists.title("Artists Per Playlist")
+    space00 = tkinter.Label(playlistArtists, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(playlistArtists, text="Number of Artists for Playlist")
+    windowTitle.config(font=("Helvetica",15,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(playlistArtists, text="").grid(row=2,column=3)
+    subTitle0 = tkinter.Label(playlistArtists, text="Number")
+    subTitle0.config(font=("Helvetica",15,"bold"))
+    subTitle0.grid(row=3,column=1)
+    subTitle = tkinter.Label(playlistArtists, text="Playlist")
+    subTitle.config(font=("Helvetica",15,"bold"))
+    subTitle.grid(row=3,column=2)
+    subTitle2 = tkinter.Label(playlistArtists, text="Number of Artists")
+    subTitle2.config(font=("Helvetica",15,"bold"))
+    subTitle2.grid(row=3,column=3)
+    cur.execute("""select p.name as "Nombre del Album", count(al.artistid) as "Numero de Artistas"
+                from (select playlisttrack.playlistid as PLAYLISTID, track.albumid as ALBUMID
+                from track
+                join playlisttrack on track.trackid = playlisttrack.trackid) mid
+                join playlist p on mid.PLAYLISTID = p.playlistid
+                join album al on al.albumid = mid.ALBUMID
+                group by p.playlistid
+                order by count(al.artistid) desc
+                limit 7;""")
+    rows = cur.fetchall()
+    i = 4
+    x = 1
+    for r in rows:
+        number = tkinter.Label(playlistArtists, text=x)
+        number.config(font=("Helvetica",15))
+        number.grid(row=i,column=1)
+        playlist = tkinter.Label(playlistArtists,text=r[0])
+        playlist.config(font=("Helvetica",15))
+        playlist.grid(row=i,column=2)
+        artists = tkinter.Label(playlistArtists,text=str(r[1]))
+        artists.config(font=("Helvetica",15))
+        artists.grid(row=i,column=3)
+        i += 1
+        x += 1
+    space1 = tkinter.Label(playlistArtists, text="").grid(row=11,column=3)
+    space2 = tkinter.Label(playlistArtists, text="").grid(row=12,column=3)
+    backModifyBtn = tkinter.Button(playlistArtists, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn.grid(row=13,column=2)
+    playlistArtists.mainloop()
+
+def diverseArtistsView(currentUser):
+    cur = con.cursor()
+    diverseArtists = tkinter.Tk()
+    diverseArtists.geometry("1000x500")
+    for i in range(5):
+        diverseArtists.columnconfigure(i,weight=1)
+    diverseArtists.title("Diverse Artists")
+    space00 = tkinter.Label(diverseArtists, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(diverseArtists, text="Number of Artists for Playlist")
+    windowTitle.config(font=("Helvetica",15,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(diverseArtists, text="").grid(row=2,column=3)
+    subTitle0 = tkinter.Label(diverseArtists, text="Number")
+    subTitle0.config(font=("Helvetica",15,"bold"))
+    subTitle0.grid(row=3,column=1)
+    subTitle = tkinter.Label(diverseArtists, text="Artists")
+    subTitle.config(font=("Helvetica",15,"bold"))
+    subTitle.grid(row=3,column=2)
+    subTitle2 = tkinter.Label(diverseArtists, text="Number of Genres")
+    subTitle2.config(font=("Helvetica",15,"bold"))
+    subTitle2.grid(row=3,column=3)
+    cur.execute("""select ar.name, count(mid.GENRE)
+                from (select album.artistid as ARTISTID, track.genreid as GENRE
+                from track
+                join album on album.albumid = track.albumid) mid
+                join artist ar on ar.artistid = mid.ARTISTID
+                group by ar.name
+                order by count(mid.GENRE) desc
+                limit 5;""")
+    rows = cur.fetchall()
+    i = 4
+    x = 1
+    for r in rows:
+        number = tkinter.Label(diverseArtists, text=x)
+        number.config(font=("Helvetica",15))
+        number.grid(row=i,column=1)
+        playlist = tkinter.Label(diverseArtists,text=r[0])
+        playlist.config(font=("Helvetica",15))
+        playlist.grid(row=i,column=2)
+        artists = tkinter.Label(diverseArtists,text=str(r[1]))
+        artists.config(font=("Helvetica",15))
+        artists.grid(row=i,column=3)
+        i += 1
+        x += 1
+    space1 = tkinter.Label(diverseArtists, text="").grid(row=9,column=3)
+    space2 = tkinter.Label(diverseArtists, text="").grid(row=10,column=3)
+    backModifyBtn = tkinter.Button(diverseArtists, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn.grid(row=11,column=2)
+    diverseArtists.mainloop()
+
+def listenSongsView(currentUser):
+    cur = con.cursor()
+    listenSongs = tkinter.Tk()
+    listenSongs.geometry("1000x500")
+    for i in range(5):
+        listenSongs.columnconfigure(i,weight=1)
+    listenSongs.title("Diverse Artists")
+    space00 = tkinter.Label(listenSongs, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(listenSongs, text="LISTEN")
+    windowTitle.config(font=("Helvetica",15,"bold"))
+    windowTitle.grid(row=1,column=1)
+    windowTitle2 = tkinter.Label(listenSongs, text="SONGS")
+    windowTitle2.config(font=("Helvetica",15,"bold"))
+    windowTitle2.grid(row=2,column=1)
+    Instruction1 = tkinter.Label(listenSongs,text="Song Name")
+    Instruction1.config(font=("Helvetica",10))
+    Instruction1.grid(row=1,column=3)
+    listenSongName = tkinter.Entry(listenSongs, font="Helvetica 10")
+    listenSongName.grid(row=2,column=3)
+    space0 = tkinter.Label(listenSongs, text="").grid(row=3,column=3)
+
 ##################################################################################################################
                                                 #Programa
 ##################################################################################################################
