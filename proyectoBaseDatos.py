@@ -61,58 +61,71 @@ def insertNewAlbum(currentUser):
         print("-> Album Registration Failed!")
 
 def insertNewSong(currentUser):
-    try:
-        cur = con.cursor()
-        songTitle = newSongTitle.get()
-        songAlbum = newSongAlbumName.get()
-        mediaType = newSongMediaType.get()
-        songGenre = newSongGenre.get()
-        songComposer = newSongComposer.get()
-        songMilliseconds = newSongMilliseconds.get()
-        songMilliseconds = int(songMilliseconds)
-        songBytes = newSongBytes.get()
-        songBytes = int(songBytes)
-        songPrice = newSongPrice.get()
-        songPrice = float(songPrice)
-        cur.execute("""SELECT trackid
-                FROM track
-                ORDER BY trackid DESC
-                LIMIT 1""")
-        tracksIDs = cur.fetchall()
-        for trackID in tracksIDs:
-            lastTrackID = trackID[0]
-            lastTrackID += 1
-            dictionary = {'Title':songTitle,'Name':songGenre,'MediaName':mediaType}
-            cur.execute("""SELECT albumid
-                            FROM album
-                            WHERE title = %(Title)s""",dictionary)
-            albumsIDs = cur.fetchall()
-            for albumID in albumsIDs:
-                rightAlbumID = albumID[0]
-                cur.execute("""SELECT genreid
-                            FROM genre
-                            WHERE name = %(Name)s""",dictionary)
-                genresIDs = cur.fetchall()
-                for genreID in genresIDs:
-                    rightGenreID = genreID[0]
-                    cur.execute("""SELECT mediatypeid
-                            FROM mediatype
-                            WHERE name = %(MediaName)s""",dictionary)
-                    mediaTypesIDs = cur.fetchall()
-                    for mediaTypeID in mediaTypesIDs:
-                        rightMediaType = mediaTypeID[0]
-                        lastDictionary = {'TrackId':lastTrackID,
-                                          'Name':songTitle,
-                                          'AlbumId':rightAlbumID,
-                                          'MediaTypeId':rightMediaType,
-                                          'GenreId':rightGenreID,
-                                          'Composer':songComposer,
-                                          'Milliseconds':songMilliseconds,
-                                          'Bytes':songBytes,
-                                          'UnitPrice':songPrice}
-                        print("Done Succesfully!")
-    except:
-        print("New Song Registration Failed!")
+    #try:
+    cur = con.cursor()
+    songTitle = newSongTitle.get()
+    songAlbum = newSongAlbumName.get()
+    mediaType = newSongMediaType.get()
+    songGenre = newSongGenre.get()
+    songComposer = newSongComposer.get()
+    songMilliseconds = newSongMilliseconds.get()
+    songMilliseconds = int(songMilliseconds)
+    songBytes = newSongBytes.get()
+    songBytes = int(songBytes)
+    songPrice = newSongPrice.get()
+    songPrice = float(songPrice)
+    url = newSongURL.get()
+    cur.execute("""SELECT trackid
+            FROM track
+            ORDER BY trackid DESC
+            LIMIT 1""")
+    tracksIDs = cur.fetchall()
+    lastTrackID = 0
+    for trackID in tracksIDs:
+        lastTrackID = trackID[0]
+        lastTrackID += 1
+        print(str(lastTrackID))
+    dictionary = {'Title':songTitle,'Name':songGenre,'MediaName':mediaType}
+    cur.execute("""SELECT albumid
+                    FROM album
+                    WHERE title = %(Title)s""",dictionary)
+    albumsIDs = cur.fetchall()
+    rightAlbumID = 0
+    for albumID in albumsIDs:
+        rightAlbumID = albumID[0]
+        print(str(rightAlbumID))
+    cur.execute("""SELECT genreid
+                FROM genre
+                WHERE name = %(Name)s""",dictionary)
+    genresIDs = cur.fetchall()
+    rightGenreID = 0
+    for genreID in genresIDs:
+        rightGenreID = genreID[0]
+        print(str(rightGenreID))
+    cur.execute("""SELECT mediatypeid
+            FROM mediatype
+            WHERE name = %(MediaName)s""",dictionary)
+    mediaTypesIDs = cur.fetchall()
+    rightMediaType = 0
+    for mediaTypeID in mediaTypesIDs:
+        rightMediaType = mediaTypeID[0]
+        print(str(rightMediaType))
+    lastDictionary = {'TrackId':lastTrackID,
+                      'Name':songTitle,
+                      'AlbumId':rightAlbumID,
+                      'MediaTypeId':rightMediaType,
+                      'GenreId':rightGenreID,
+                      'Composer':songComposer,
+                      'Milliseconds':songMilliseconds,
+                      'Bytes':songBytes,
+                      'UnitPrice':songPrice,
+                      'songURL':url}
+    cur.execute("""INSERT INTO track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL)
+                VALUES (%(TrackId)s,%(Name)s,%(AlbumId)s,%(MediaTypeId)s,%(GenreId)s,%(Composer)s,%(Milliseconds)s,%(Bytes)s,%(UnitPrice)s,%(songURL)s)""",lastDictionary)
+    con.commit()
+    print("\n-> Song Registered Succesfully!")
+    #except:
+        #print("New Song Registration Failed!")
 
 def modifyArtist(currentUser):
     try:
@@ -126,7 +139,7 @@ def modifyArtist(currentUser):
         con.commit()
         print("\n-> Artist Updated Succesfully!")
     except:
-        print("\nArtist Update Failed!")
+        print("\Artist Update Failed!")
 
 def modifyAlbum(currentUser):
     try:
@@ -140,23 +153,85 @@ def modifyAlbum(currentUser):
                         FROM album
                         WHERE title = %(AlbumName)s""",dictionary)
         albumIDS = cur.fetchall()
+        ALBUMID = 0
         for albumID in albumIDS:
-            lastAlbumID = albumID[0]
-        lastAlbumID += 1
+            ALBUMID = albumID[0]
         cur.execute("""SELECT artistid FROM artist WHERE name = %(ArtistName)s""",dictionary)
         artistsIDs = cur.fetchall()
         for artistID in artistsIDs:
             rightID = artistID[0]
             finalDictionary = {'OldAlbum':oldAlbum,'albumID':lastAlbumID,'NewAlbum':newAlbum,'ArtistID':rightID}
             cur.execute("""UPDATE album
-                            SET albumID = %(albumID)s,
-                                title = %(NewAlbum)s,
-                                artistid = %(ArtistID)s
+                            SET title = %(NewAlbum)s
                         WHERE title = %(OldAlbum)s""",finalDictionary)
             con.commit()
-        print("\n-> Artist Updated Succesfully!")
+        print("\n-> Album Updated Succesfully!")
     except:
-        print("\nArtist Update Failed!")
+        print("\n Album Update Failed!")
+
+def removeArtist(currentUser):
+    try:        
+        cur = con.cursor()
+        artistName = removeArtistName.get()
+        dictionary = {'Name':artistName}
+        cur.execute("""DELETE FROM artist
+                    WHERE name = %(Name)s""",dictionary)
+        con.commit()
+        print("\n-> Artist removed Succesfully!")
+    except:
+        print("\n-> Artist removal Failed!")
+        print("-> Try removing all artist albums first...")
+
+def removeAlbum(currentUser):
+    try:
+        cur = con.cursor()
+        albumTitle = rmalbumTitle.get()
+        artistName = rmalbumArtistName.get()
+        dictionary1 = {'Name':artistName}
+        cur.execute("""SELECT artistid
+                        FROM artist
+                        WHERE name = %(Name)s
+                        LIMIT 1;""",dictionary1)
+        rows = cur.fetchall()
+        for r in rows:
+            artistid = r[0]
+            if r[0] == None:
+                print("-> Artist not found!")
+            else:
+                
+                dictionary2 = {'Title':albumTitle,'ArtistID':artistid}
+                cur.execute("""DELETE FROM album
+                            WHERE title = %(Title)s AND artistid = %(ArtistID)s""",dictionary2)
+                con.commit()
+                print("\n-> Album Removed Succesfully!")
+    except:
+        print("\n-> Album Removal Failed!")
+
+def removeSong(currentUser):
+    try:
+        cur = con.cursor()
+        songTitle = rmsgSongTitle.get()
+        composer = rmsgComposer.get()
+        dictionary1 = {'Name':songTitle,'Composer':composer}
+        cur.execute("""SELECT trackid
+                    FROM track
+                    WHERE name = %(Name)s AND composer = %(Composer)s;""",dictionary1)
+        rows = cur.fetchall()
+        if rows == None:
+            print("\n-> No Song found with Those Credentials!")
+        else:
+            for r in rows:
+                songID = r[0]
+                dictionary2 = {'TrackID':songID,'Name':songTitle}
+                cur.execute("""DELETE FROM playlisttrack
+                            WHERE trackid = %(TrackID)s;""",dictionary2)
+                con.commit()
+                cur.execute("""DELETE FROM track
+                            WHERE trackid = %(TrackID)s AND name = %(Name)s;""",dictionary2)
+                con.commit()
+                print("\n-> Song Removed Succesfully!")
+    except:
+        print("\n-> Song Removal Failed!")
 
 def songDeactivation(currentUser):
     try:
@@ -338,47 +413,47 @@ def registerUser(con):
         print("\n->Registration failed!")
 
 def loginUser(con):
-    #try:
-    message = "User not found"
-    currentUser = {}
-    for name, us in currentUser.items():
-        print(name + ": " + us)
-    user = userEntry.get()
-    password = passwordEntry.get()
-    cur = con.cursor()
-    cur.execute("""SELECT Username, password
-                    FROM Employee""")
-    admins = cur.fetchall()
-    for r in admins:
-        if user == r[0] and password == r[1]:
-            currentUser['name'] = user
-            currentUser['type'] = 'admin' 
-            adminView(currentUser)
-            
-    cur.execute("""SELECT Username, password
-                    FROM Customer""")
-    customers = cur.fetchall()
-    for r in customers:
-        if user == r[0] and password == r[1]:
-            userCredentials = {'username':user}
-            currentUser['name'] = user
-            cur.execute("""SELECT rol
-                            FROM Customer
-                            WHERE Username = %(username)s""",userCredentials)
-            rol = cur.fetchall()
-            for r in rol:
-                userType = r[0]                    
-                if userType == 1:
-                    currentUser['type'] = 'Tier 1'
-                    customer1View(currentUser)
-                elif userType == 2:
-                    currentUser['type'] = 'Tier 2'
-                    customer2View(currentUser)
-                elif userType == 3:
-                    currentUser['type'] = 'Tier 3'
-                    customer3View(currentUser)
-    #except:
-        #print("Login Failed")
+    try:
+        message = "User not found"
+        currentUser = {}
+        for name, us in currentUser.items():
+            print(name + ": " + us)
+        user = userEntry.get()
+        password = passwordEntry.get()
+        cur = con.cursor()
+        cur.execute("""SELECT Username, password
+                        FROM Employee""")
+        admins = cur.fetchall()
+        for r in admins:
+            if user == r[0] and password == r[1]:
+                currentUser['name'] = user
+                currentUser['type'] = 'admin' 
+                adminView(currentUser)
+                
+        cur.execute("""SELECT Username, password
+                        FROM Customer""")
+        customers = cur.fetchall()
+        for r in customers:
+            if user == r[0] and password == r[1]:
+                userCredentials = {'username':user}
+                currentUser['name'] = user
+                cur.execute("""SELECT rol
+                                FROM Customer
+                                WHERE Username = %(username)s""",userCredentials)
+                rol = cur.fetchall()
+                for r in rol:
+                    userType = r[0]                    
+                    if userType == 1:
+                        currentUser['type'] = 'Tier 1'
+                        customer1View(currentUser)
+                    elif userType == 2:
+                        currentUser['type'] = 'Tier 2'
+                        customer2View(currentUser)
+                    elif userType == 3:
+                        currentUser['type'] = 'Tier 3'
+                        customer3View(currentUser)
+    except:
+        print("Login Failed")
 
 ##################################################################################################################
                                         #Vistas del sistema
@@ -834,78 +909,85 @@ def newAlbumView(currentUser):
     newAlbumWindow.mainloop()
 
 def newSongView(currentUser):
-    global newSongTitle, newSongAlbumName, newSongMediaType, newSongGenre, newSongComposer, newSongMilliseconds, newSongBytes, newSongPrice
+    global newSongTitle, newSongAlbumName, newSongMediaType, newSongGenre, newSongComposer, newSongMilliseconds, newSongBytes, newSongPrice, newSongURL
     newSongWindow = tkinter.Tk()
     newSongWindow.geometry("650x950")
     newSongWindow.title("Enter New Song")
     space00 = tkinter.Label(newSongWindow, text="")
     space00.pack()
     windowTitle = tkinter.Label(newSongWindow, text="Enter new Song")
-    windowTitle.config(font=("Helvetica",22,"bold"))
+    windowTitle.config(font=("Helvetica",16,"bold"))
     windowTitle.pack()
     space0 = tkinter.Label(newSongWindow, text="")
     space0.pack()
     Instruction1 = tkinter.Label(newSongWindow, text="Enter Song Name")
-    Instruction1.config(font=("Helvetica",13,"bold"))
+    Instruction1.config(font=("Helvetica",11,"bold"))
     Instruction1.pack()
-    newSongTitle = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongTitle = tkinter.Entry(newSongWindow, font="Helvetica 12")
     newSongTitle.pack()
     space1 = tkinter.Label(newSongWindow, text="")
     space1.pack()
     Instruction2 = tkinter.Label(newSongWindow, text="Enter Album Name")
-    Instruction2.config(font=("Helvetica",13,"bold"))
+    Instruction2.config(font=("Helvetica",11,"bold"))
     Instruction2.pack()
-    newSongAlbumName = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongAlbumName = tkinter.Entry(newSongWindow, font="Helvetica 12")
     newSongAlbumName.pack()
     space2 = tkinter.Label(newSongWindow, text="")
     space2.pack()
     Instruction3 = tkinter.Label(newSongWindow, text="Enter Media Type")
-    Instruction3.config(font=("Helvetica",13,"bold"))
+    Instruction3.config(font=("Helvetica",11,"bold"))
     Instruction3.pack()
-    newSongMediaType = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongMediaType = tkinter.Entry(newSongWindow, font="Helvetica 12")
     newSongMediaType.pack()
     space3 = tkinter.Label(newSongWindow, text="")
     space3.pack()
     Instruction4 = tkinter.Label(newSongWindow, text="Enter Genre")
-    Instruction4.config(font=("Helvetica",13,"bold"))
+    Instruction4.config(font=("Helvetica",11,"bold"))
     Instruction4.pack()
-    newSongGenre = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongGenre = tkinter.Entry(newSongWindow, font="Helvetica 12")
     newSongGenre.pack()
     space4 = tkinter.Label(newSongWindow, text="")
     space4.pack()
     Instruction5 = tkinter.Label(newSongWindow, text="Enter Composer")
-    Instruction5.config(font=("Helvetica",13,"bold"))
+    Instruction5.config(font=("Helvetica",11,"bold"))
     Instruction5.pack()
-    newSongComposer = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongComposer = tkinter.Entry(newSongWindow, font="Helvetica 12")
     newSongComposer.pack()
     space5 = tkinter.Label(newSongWindow, text="")
     space5.pack()
     Instruction6 = tkinter.Label(newSongWindow, text="Enter Milliseconds")
-    Instruction6.config(font=("Helvetica",13,"bold"))
+    Instruction6.config(font=("Helvetica",11,"bold"))
     Instruction6.pack()
-    newSongMilliseconds = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongMilliseconds = tkinter.Entry(newSongWindow, font="Helvetica 12")
     newSongMilliseconds.pack()
     space6 = tkinter.Label(newSongWindow, text="")
     space6.pack()
     Instruction7 = tkinter.Label(newSongWindow, text="Enter Bytes")
-    Instruction7.config(font=("Helvetica",13,"bold"))
+    Instruction7.config(font=("Helvetica",11,"bold"))
     Instruction7.pack()
-    newSongBytes = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongBytes = tkinter.Entry(newSongWindow, font="Helvetica 12")
     newSongBytes.pack()
     space7 = tkinter.Label(newSongWindow, text="")
     space7.pack()
     Instruction8 = tkinter.Label(newSongWindow, text="Enter Song Price")
-    Instruction8.config(font=("Helvetica",13,"bold"))
+    Instruction8.config(font=("Helvetica",11,"bold"))
     Instruction8.pack()
-    newSongPrice = tkinter.Entry(newSongWindow, font="Helvetica 13")
+    newSongPrice = tkinter.Entry(newSongWindow, font="Helvetica 12")
     newSongPrice.pack()
     space8 = tkinter.Label(newSongWindow, text="")
     space8.pack()
-    enterArtistBtn = tkinter.Button(newSongWindow,text="Enter Song",bg="#c8c8c8",padx=20,pady=10, command = lambda: insertNewSong(currentUser))
+    Instruction9 = tkinter.Label(newSongWindow, text="Enter Song URL")
+    Instruction9.config(font=("Helvetica",11,"bold"))
+    Instruction9.pack()
+    newSongURL = tkinter.Entry(newSongWindow, font="Helvetica 12")
+    newSongURL.pack()
+    space9 = tkinter.Label(newSongWindow, text="")
+    space9.pack()
+    enterArtistBtn = tkinter.Button(newSongWindow,text="Enter Song",bg="#c8c8c8",padx=20,pady=6, command = lambda: insertNewSong(currentUser))
     enterArtistBtn.pack()
     space10 = tkinter.Label(newSongWindow, text="")
     space10.pack()
-    backSongBtn = tkinter.Button(newSongWindow,text="Back",bg="#c8c8c8",padx=20,pady=10)
+    backSongBtn = tkinter.Button(newSongWindow,text="Back",bg="#c8c8c8",padx=20,pady=6)
     backSongBtn.pack()
     newSongWindow.mainloop()
 
@@ -1047,6 +1129,7 @@ def modifySongView(currentUser):
     mdSongWindow.mainloop()
 
 def removeArtistView(currentUser):
+    global removeArtistName
     removeArtistWindow = tkinter.Tk()
     removeArtistWindow.geometry("650x400")
     removeArtistWindow.title("Remove Artist")
@@ -1064,8 +1147,8 @@ def removeArtistView(currentUser):
     removeArtistName.pack()
     space1 = tkinter.Label(removeArtistWindow, text="")
     space1.pack()
-    enterArtistBtn = tkinter.Button(removeArtistWindow,text="Remove Artist",bg="#c8c8c8",padx=20,pady=10)
-    enterArtistBtn.pack()
+    removeArtistBtn = tkinter.Button(removeArtistWindow,text="Remove Artist",bg="#c8c8c8",padx=20,pady=10, command = lambda: removeArtist(currentUser))
+    removeArtistBtn.pack()
     space2 = tkinter.Label(removeArtistWindow, text="")
     space2.pack()
     backArtistBtn = tkinter.Button(removeArtistWindow,text="Back",bg="#c8c8c8",padx=20,pady=10)
@@ -1074,6 +1157,7 @@ def removeArtistView(currentUser):
     removeArtistWindow.mainloop()
 
 def removeAlbumView(currentUser):
+    global rmalbumTitle, rmalbumArtistName
     removeAlbumWindow = tkinter.Tk()
     removeAlbumWindow.geometry("650x550")
     removeAlbumWindow.title("Remove Album")
@@ -1098,7 +1182,7 @@ def removeAlbumView(currentUser):
     rmalbumArtistName.pack()
     space2 = tkinter.Label(removeAlbumWindow, text="")
     space2.pack()
-    removeAlbumBtn = tkinter.Button(removeAlbumWindow,text="Remove Album",bg="#c8c8c8",padx=20,pady=10)
+    removeAlbumBtn = tkinter.Button(removeAlbumWindow,text="Remove Album",bg="#c8c8c8",padx=20,pady=10, command = lambda: removeAlbum(currentUser))
     removeAlbumBtn.pack()
     space3 = tkinter.Label(removeAlbumWindow, text="")
     space3.pack()
@@ -1107,6 +1191,7 @@ def removeAlbumView(currentUser):
     removeAlbumWindow.mainloop()
 
 def removeSongView(currentUser):
+    global rmsgSongTitle, rmsgComposer
     removeSongWindow = tkinter.Tk()
     removeSongWindow.geometry("650x600")
     removeSongWindow.title("Remove Song")
@@ -1138,7 +1223,7 @@ def removeSongView(currentUser):
     rmsgComposer.pack()
     space3 = tkinter.Label(removeSongWindow, text="")
     space3.pack()
-    removeSongBtn = tkinter.Button(removeSongWindow,text="Remove Song",bg="#c8c8c8",padx=20,pady=10)
+    removeSongBtn = tkinter.Button(removeSongWindow,text="Remove Song",bg="#c8c8c8",padx=20,pady=10, command = lambda: removeSong(currentUser))
     removeSongBtn.pack()
     space3 = tkinter.Label(removeSongWindow, text="")
     space3.pack()
