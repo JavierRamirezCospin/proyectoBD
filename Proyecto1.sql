@@ -138,6 +138,7 @@ CREATE TABLE Track
     Milliseconds INT NOT NULL,
     Bytes INT,
     UnitPrice NUMERIC(10,2) NOT NULL,
+    Activa INT DEFAULT 1,
     CONSTRAINT PK_Track PRIMARY KEY (TrackId),
     FOREIGN KEY (AlbumId) REFERENCES Album (AlbumId) ON DELETE NO ACTION ON UPDATE NO ACTION,
     FOREIGN KEY (GenreId) REFERENCES Genre (GenreId) ON DELETE NO ACTION ON UPDATE NO ACTION,
@@ -252,34 +253,34 @@ INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (8,'Eliminar Albumes
 INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (9,'Eliminar Canciones');
 INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (10,'Inactivar Canciones del catalogo');
 
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 1',1);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 1',2);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 1',3);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',1);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',2);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',3);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',4);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',5);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',6);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',1);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',2);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',3);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',4);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',5);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',6);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',7);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',8);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',9);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',1);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',2);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',3);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',4);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',5);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',6);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',7);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',8);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',9);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',10);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 1',1);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 1',2);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 1',3);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 2',1);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 2',2);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 2',3);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 2',4);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 2',5);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 2',6);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 3',1);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 3',2);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 3',3);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 3',4);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 3',5);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 3',6);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 3',7);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 3',8);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Tipo 3',9);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Administrador',1);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Administrador',2);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Administrador',3);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Administrador',4);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Administrador',5);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Administrador',6);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Administrador',7);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Administrador',8);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Administrador',9);
+INSERT INTO RolesAndPermisos (NombreRol, PermisoId) VALUES ('Administrador',10);
 
 INSERT INTO Artist (ArtistId, Name) VALUES (1,'AC/DC');
 INSERT INTO Artist (ArtistId, Name) VALUES (2,'Accept');
@@ -698,8 +699,8 @@ INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (138,'The Song Remains The S
 INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (139,'A TempestadeTempestade Ou O Livro Dos Dias', 99);
 INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (140,'Mais Do Mesmo', 99);
 INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (141,'Greatest Hits', 100);
-INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (142,'Lulu Santos - RCA 100 Anos De Música - �?lbum 01', 101);
-INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (143,'Lulu Santos - RCA 100 Anos De Música - �?lbum 02', 101);
+INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (142,'Lulu Santos - RCA 100 Anos De Música - �?lbum 01', 101);
+INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (143,'Lulu Santos - RCA 100 Anos De Música - �?lbum 02', 101);
 INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (144,'Misplaced Childhood', 102);
 INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (145,'Barulhinho Bom', 103);
 INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (146,'Seek And Shall Find: More Of The Best (1963-1981)', 104);
@@ -1283,7 +1284,7 @@ INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milli
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (376,'Vôo Sobre o Horizonte', 33, 1, 7,'J.r.Bertami/Parana', 225097, 7528825, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (377,'A Paz', 33, 1, 7,'Donato/Gilberto Gil', 263183, 8619173, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (378,'Wave (Vou te Contar)', 33, 1, 7,'Antonio Carlos Jobim', 271647, 9057557, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (379,'�?gua de Beber', 33, 1, 7,'Antonio Carlos Jobim/Vinicius de Moraes', 146677, 4866476, 0.99);
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (379,'�?gua de Beber', 33, 1, 7,'Antonio Carlos Jobim/Vinicius de Moraes', 146677, 4866476, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (380,'Samba da Bençaco', 33, 1, 7,'Baden Powell/Vinicius de Moraes', 282200, 9440676, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (381,'Pode Parar', 33, 1, 7,'Jorge Vercilo/Jota Maranhao', 179408, 6046678, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (382,'Menino do Rio', 33, 1, 7,'Caetano Veloso', 262713, 8737489, 0.99);
@@ -1761,7 +1762,7 @@ INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Milliseconds, B
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Milliseconds, Bytes, UnitPrice) VALUES (854,'Boa Noite', 69, 1, 7, 338755, 11283582, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Milliseconds, Bytes, UnitPrice) VALUES (855,'Fato Consumado', 69, 1, 7, 211565, 7018586, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Milliseconds, Bytes, UnitPrice) VALUES (856,'Faltando Um Pedaço', 69, 1, 7, 267728, 8788760, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Milliseconds, Bytes, UnitPrice) VALUES (857,'�?libi', 69, 1, 7, 213237, 6928434, 0.99);
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Milliseconds, Bytes, UnitPrice) VALUES (857,'�?libi', 69, 1, 7, 213237, 6928434, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Milliseconds, Bytes, UnitPrice) VALUES (858,'Esquinas', 69, 1, 7, 280999, 9096726, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Milliseconds, Bytes, UnitPrice) VALUES (859,'Se...', 69, 1, 7, 286432, 9413777, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Milliseconds, Bytes, UnitPrice) VALUES (860,'Eu Te Devoro', 69, 1, 7, 311614, 10312775, 0.99);
@@ -2864,7 +2865,7 @@ INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milli
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (1957,'Kir Royal', 161, 1, 16,'Mônica Marianno', 234788, 7706552, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (1958,'O Que Vai Em Meu Coração', 161, 1, 16,'Mônica Marianno', 255373, 8366846, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (1959,'Aos Leões', 161, 1, 16,'Mônica Marianno', 234684, 7790574, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (1960,'Dois �?ndios', 161, 1, 16,'Mônica Marianno', 219271, 7213072, 0.99);
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (1960,'Dois �?ndios', 161, 1, 16,'Mônica Marianno', 219271, 7213072, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (1961,'Noite Negra', 161, 1, 16,'Mônica Marianno', 206811, 6819584, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (1962,'Beijo do Olhar', 161, 1, 16,'Mônica Marianno', 252682, 8369029, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (1963,'É Fogo', 161, 1, 16,'Mônica Marianno', 194873, 6501520, 0.99);
@@ -3353,7 +3354,7 @@ INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milli
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (2446,'So Beautiful', 141, 1, 1,'Mick Hucknall', 298083, 9837832, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (2447,'Angel', 141, 1, 1,'Carolyn Franklin and Sonny Saunders', 240561, 7880256, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (2448,'Fairground', 141, 1, 1,'Mick Hucknall', 263888, 8793094, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (2449,'�?gua E Fogo', 199, 1, 1,'Chico Amaral/Edgard Scandurra/Samuel Rosa', 278987, 9272272, 0.99);
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (2449,'�?gua E Fogo', 199, 1, 1,'Chico Amaral/Edgard Scandurra/Samuel Rosa', 278987, 9272272, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (2450,'Três Lados', 199, 1, 1,'Chico Amaral/Samuel Rosa', 233665, 7699609, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (2451,'Ela Desapareceu', 199, 1, 1,'Chico Amaral/Samuel Rosa', 250122, 8289200, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (2452,'Balada Do Amor Inabalável', 199, 1, 1,'Fausto Fawcett/Samuel Rosa', 240613, 8025816, 0.99);
