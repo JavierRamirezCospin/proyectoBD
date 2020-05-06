@@ -302,13 +302,33 @@ def changeUserPermission(currentUser):
     except:
         print("\n-> User Permission Failed!")
 
-def listenSongsFunction(currentUser):
-    cur = con.cursor()
-    username = currentUser['name']
-    userType = currentUser['type']
-    if userType == "admin":
-        print("Admin user!")
-    else:
+def listenAdminSongsFunction(currentUser):
+    try:
+        cur = con.cursor()
+        message = "\n-> Song not found!"
+        songName = listenSongName2.get()
+        dictionary = {'Name':songName}
+        cur.execute("""SELECT songURL
+                    from track
+                    where name = %(Name)s
+                    limit 1;""",dictionary)
+        rows = cur.fetchall()
+        for r in rows:
+            new=2
+            url=r[0]
+            webbrowser.open(url,new=new)
+            message = "\n-> Playing song..."
+        print(message)
+    except:
+        print("-> Song Playback Failed!")
+
+def listenCustomerSongsFunction(currentUser):
+    try:
+        cur = con.cursor()
+        message = "\n-> Song not found on user!"
+        username = currentUser['name']
+        userType = currentUser['type']
+        songTitle = listenSongName.get()
         dictionary1 = {'username':username}
         cur.execute("""select customerid
                     from customer 
@@ -318,19 +338,25 @@ def listenSongsFunction(currentUser):
         customerID = 0
         for r in rows1:
             customerID = r[0]
-            dictionary2 = {'customerID':customerID}
-            cur.execute("""SELECT track.songURL
-                    from (select invoiceline.invoiceid as INVOICELINEID, invoiceline.trackid as INVOICELINETRACKID
-                    from invoiceline) mid
-                    left join track on track.trackid = mid.INVOICELINETRACKID
-                    left join invoice on invoice.invoiceid = mid.INVOICELINEID
-                    where invoice.customerid = %(customerID)s
-                    LIMIT 1;""",dictionary2)
-            rows = cur.fetchall()
-            for r in rows:
+        dictionary2 = {'customerID':customerID}
+        cur.execute("""SELECT track.name, track.songURL
+                from (select invoiceline.invoiceid as INVOICELINEID, invoiceline.trackid as INVOICELINETRACKID
+                from invoiceline) mid
+                left join track on track.trackid = mid.INVOICELINETRACKID
+                left join invoice on invoice.invoiceid = mid.INVOICELINEID
+                where invoice.customerid = %(customerID)s;""",dictionary2)
+        rows = cur.fetchall()
+        for r in rows:
+            if songTitle == r[0]:
                 new=2
-                url=r[0]
+                url=r[1]
                 webbrowser.open(url,new=new)
+                message = "\n-> Playing song..."
+        print(message)
+    except:
+        print("\n-> Song not found! Problem because:")
+        print("    1. Song is typed incorrectly")
+        print("    2. Song does not have a URL")
 
 def registerUser(con):
     try:
@@ -640,7 +666,7 @@ def customer1View(currentUser):
     playlistArtists.grid(row=10,column=2)
     diverseArtists = tkinter.Button(customer1View, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(currentUser))
     diverseArtists.grid(row=11,column=2)
-    listenSongs = tkinter.Button(customer1View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    listenSongs = tkinter.Button(customer1View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsCustomerView(currentUser))
     listenSongs.grid(row=4,column=3)
     space4 = tkinter.Label(customer1View, text="").grid(row=5,column=3)
     purchaseSongs = tkinter.Button(customer1View, text="Purchase Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
@@ -701,7 +727,7 @@ def customer2View(currentUser):
     playlistArtists.grid(row=10,column=2)
     diverseArtists = tkinter.Button(customer2View, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(currentUser))
     diverseArtists.grid(row=11,column=2)
-    listenSongs = tkinter.Button(customer2View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    listenSongs = tkinter.Button(customer2View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsCustomerView(currentUser))
     listenSongs.grid(row=4,column=3)
     space4 = tkinter.Label(customer2View, text="").grid(row=5,column=3)
     purchaseSongs = tkinter.Button(customer2View, text="Purchase Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
@@ -764,7 +790,7 @@ def customer3View(currentUser):
     playlistArtists.grid(row=10,column=2)
     diverseArtists = tkinter.Button(customer3View, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(currentUser))
     diverseArtists.grid(row=11,column=2)
-    listenSongs = tkinter.Button(customer3View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    listenSongs = tkinter.Button(customer3View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsCustomerView(currentUser))
     listenSongs.grid(row=4,column=3)
     space4 = tkinter.Label(customer3View, text="").grid(row=5,column=3)
     purchaseSongs = tkinter.Button(customer3View, text="Purchase Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
@@ -832,7 +858,7 @@ def adminView(currentUser):
     playlistArtists.grid(row=10,column=2)
     diverseArtists = tkinter.Button(adminWindow, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(currentUser))
     diverseArtists.grid(row=11,column=2)
-    listenSongs = tkinter.Button(adminWindow, text="Listen Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    listenSongs = tkinter.Button(adminWindow, text="Listen Songs",width=20,height=1, command = lambda: listenSongsAdminView(currentUser))
     listenSongs.grid(row=4,column=3)
     space4 = tkinter.Label(adminWindow, text="").grid(row=5,column=3)
     purchaseSongs = tkinter.Button(adminWindow, text="Purchase Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
@@ -841,7 +867,7 @@ def adminView(currentUser):
     trackLogs = tkinter.Button(adminWindow, text="Song Logs",width=20,height=1, command = lambda: listenSongsView(currentUser))
     trackLogs.grid(row=8,column=3)
     space6 = tkinter.Label(adminWindow, text="").grid(row=9,column=3)
-    purchaseSimulator = tkinter.Button(adminWindow, text="Purchase Simulator",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    purchaseSimulator = tkinter.Button(adminWindow, text="Purchase Simulator",width=20,height=1, command = lambda: listenSongsAdminView(currentUser))
     purchaseSimulator.grid(row=10,column=3)
     logoutBtn = tkinter.Button(adminWindow, text="LOGOUT", width=20, height=1, bg="#ff9999", command = lambda: logOut(adminWindow,currentUser))
     logoutBtn.grid(row=18,column=1)
@@ -1698,26 +1724,105 @@ def diverseArtistsView(currentUser):
     backModifyBtn.grid(row=11,column=2)
     diverseArtists.mainloop()
 
-def listenSongsView(currentUser):
+def listenSongsAdminView(currentUser):
+    global listenSongName2
     cur = con.cursor()
-    listenSongs = tkinter.Tk()
-    listenSongs.geometry("1000x500")
+    listenSongsAdmin = tkinter.Tk()
+    listenSongsAdmin.geometry("1000x250")
     for i in range(5):
-        listenSongs.columnconfigure(i,weight=1)
-    listenSongs.title("Diverse Artists")
-    space00 = tkinter.Label(listenSongs, text="").grid(row=0,column=3)
-    windowTitle = tkinter.Label(listenSongs, text="LISTEN")
+        listenSongsAdmin.columnconfigure(i,weight=1)
+    listenSongsAdmin.title("Diverse Artists")
+    space00 = tkinter.Label(listenSongsAdmin, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(listenSongsAdmin, text="LISTEN")
     windowTitle.config(font=("Helvetica",15,"bold"))
     windowTitle.grid(row=1,column=1)
-    windowTitle2 = tkinter.Label(listenSongs, text="SONGS")
+    windowTitle2 = tkinter.Label(listenSongsAdmin, text="SONGS")
     windowTitle2.config(font=("Helvetica",15,"bold"))
     windowTitle2.grid(row=2,column=1)
-    Instruction1 = tkinter.Label(listenSongs,text="Song Name")
-    Instruction1.config(font=("Helvetica",10))
+    Instruction1 = tkinter.Label(listenSongsAdmin,text="Song Name")
+    Instruction1.config(font=("Helvetica",13,"bold"))
     Instruction1.grid(row=1,column=3)
-    listenSongName = tkinter.Entry(listenSongs, font="Helvetica 10")
+    listenSongName2 = tkinter.Entry(listenSongsAdmin, font="Helvetica 10")
+    listenSongName2.grid(row=2,column=3)
+    listenCustomerSong = tkinter.Button(listenSongsAdmin, text="Listen Song", padx=15, pady=5, bg="#c8c8c8", command = lambda: listenAdminSongsFunction(currentUser))
+    listenCustomerSong.grid(row=2,column=4)
+    space1 = tkinter.Label(listenSongsAdmin, text="").grid(row=3,column=3)
+    space2 = tkinter.Label(listenSongsAdmin, text="").grid(row=4,column=3)
+    backModifyBtn = tkinter.Button(listenSongsAdmin, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn.grid(row=5,column=2)
+    listenSongsAdmin.mainloop()
+
+def listenSongsCustomerView(currentUser):
+    global listenSongName
+    cur = con.cursor()
+    listenSongsCustomer = tkinter.Tk()
+    listenSongsCustomer.geometry("1000x700")
+    songs = []
+    username = currentUser['name']
+    dictionary = {'Username':username}
+    dictionary2 = {}
+    cur.execute("""select customerid 
+                from customer
+                where Username = %(Username)s;""",dictionary)
+    customerIDS = cur.fetchall()
+    for customerID in customerIDS:
+        customerid = customerID[0]
+        dictionary2 = {'CustomerId':customerid}
+    for i in range(5):
+        listenSongsCustomer.columnconfigure(i,weight=1)
+    listenSongsCustomer.title("Diverse Artists")
+    space00 = tkinter.Label(listenSongsCustomer, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(listenSongsCustomer, text="LISTEN")
+    windowTitle.config(font=("Helvetica",15,"bold"))
+    windowTitle.grid(row=1,column=1)
+    windowTitle2 = tkinter.Label(listenSongsCustomer, text="SONGS")
+    windowTitle2.config(font=("Helvetica",15,"bold"))
+    windowTitle2.grid(row=2,column=1)
+    Instruction1 = tkinter.Label(listenSongsCustomer,text="Song Name")
+    Instruction1.config(font=("Helvetica",13,"bold"))
+    Instruction1.grid(row=1,column=3)
+    listenSongName = tkinter.Entry(listenSongsCustomer, font="Helvetica 10")
     listenSongName.grid(row=2,column=3)
-    space0 = tkinter.Label(listenSongs, text="").grid(row=3,column=3)
+    listenCustomerSong = tkinter.Button(listenSongsCustomer, text="Listen Song", padx=15, pady=5, bg="#c8c8c8", command = lambda: listenCustomerSongsFunction(currentUser))
+    listenCustomerSong.grid(row=2,column=4)
+    space0 = tkinter.Label(listenSongsCustomer, text="").grid(row=3,column=3)
+    subTitle0 = tkinter.Label(listenSongsCustomer, text="Number")
+    subTitle0.config(font=("Helvetica",15,"bold"))
+    subTitle0.grid(row=4,column=1)
+    subTitle = tkinter.Label(listenSongsCustomer, text="Purchase ID")
+    subTitle.config(font=("Helvetica",15,"bold"))
+    subTitle.grid(row=4,column=2)
+    subTitle2 = tkinter.Label(listenSongsCustomer, text="Song Name")
+    subTitle2.config(font=("Helvetica",15,"bold"))
+    subTitle2.grid(row=4,column=3)
+    cur.execute("""select mid.INVOICELINEID, track.name
+                from (select invoiceline.invoiceid as INVOICELINEID, invoiceline.trackid as INVOICELINETRACKID
+                from invoiceline) mid
+                left join track on track.trackid = mid.INVOICELINETRACKID
+                left join invoice on invoice.invoiceid = mid.INVOICELINEID
+                where invoice.customerid = %(CustomerId)s
+                limit 10;""",dictionary2)
+    rows = cur.fetchall()
+    i = 5
+    x = 1
+    for r in rows:
+        number = tkinter.Label(listenSongsCustomer, text=x)
+        number.config(font=("Helvetica",15))
+        number.grid(row=i,column=1)
+        purchaseid = tkinter.Label(listenSongsCustomer,text=str(r[0]))
+        purchaseid.config(font=("Helvetica",15))
+        purchaseid.grid(row=i,column=2)
+        songname = tkinter.Label(listenSongsCustomer,text=r[1])
+        songname.config(font=("Helvetica",15))
+        songname.grid(row=i,column=3)
+        songs.append(r[1])
+        i += 1
+        x += 1
+    space1 = tkinter.Label(listenSongsCustomer, text="").grid(row=15,column=3)
+    space2 = tkinter.Label(listenSongsCustomer, text="").grid(row=16,column=3)
+    backModifyBtn = tkinter.Button(listenSongsCustomer, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn.grid(row=17,column=3)
+    listenSongsCustomer.mainloop()
 
 ##################################################################################################################
                                                 #Programa
