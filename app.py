@@ -22,7 +22,7 @@ class Notification(Toplevel):
 
 class App:
 
-    def __init__(self, master, screenx, screeny, con):
+    def __init__(self, master, screenx, screeny, con=None):
         self.root = master
         self.scy = screeny
         self.scx = screenx
@@ -31,7 +31,10 @@ class App:
         self.con = con
 
         #   frames
+        self.topFrame = Frame(self.root, height=10, bd=2)
+        self.topFrame.grid(row=0)
         self.loginFrame = Frame(self.root)
+        self.loginFrame.grid(row=1)
         self.mainFrame = Frame(self.root)
         self.adminFrame = Frame(self.root)
 
@@ -40,11 +43,24 @@ class App:
         self.loginUsernameEntryVar = StringVar()
         self.loginPasswordEntryVar = StringVar()
 
-        self.loginButton = Button(self.loginFrame, Text='Login',)
-        self.signUpButton = Button(self.loginFrame, Text='Sign Up',)
+        self.loginButton = Button(self.loginFrame, text='Login',)
+        self.loginButton.grid(row=0, pady=2)
+
+        self.signUpButton = Button(self.loginFrame, text='Sign Up',)
+        self.signUpButton.grid(row=1, pady=2)
+        self.notifButton = Button(self.loginFrame, text='Notification', )
+        self.notifButton.grid(row=2, pady=2)
+
+        self.showLoginButton = Button(self.topFrame, text='Show Login', command=self.showLogin)
+        self.showLoginButton.grid(padx=3, row=0, column=0)
+        self.hideLoginButton = Button(self.topFrame, text='Hide Login', command=self.hideLogin)
+        self.hideLoginButton.grid(padx=3, row=0, column=1)
 
     def hideLogin(self):
-        pass
+        self.loginFrame.grid_remove()
+
+    def showLogin(self):
+        self.loginFrame.grid()
 
     def login(self):
         pass
@@ -55,17 +71,23 @@ class App:
     def signup(self):
         pass
 
+    def notification(self, message):
+        print('Notifying: ', message)
+        n = Notification(message)
+        print('Done')
+
 
 
 if __name__ == '__main__':
     root = Tk()
-    con = psycopg2.connect(
-        host = "127.0.0.1",
-        database = "basesdb",
-        user = "postgres",
-        password = "7654321.",
-        port = 5432
-    )
+    con = ''
+    # con = psycopg2.connect(
+    #     host = "127.0.0.1",
+    #     database = "basesdb",
+    #     user = "postgres",
+    #     password = "7654321.",
+    #     port = 5432
+    # )
 
     root.title('CloudSound')
     root.minsize(485, 590)  # for now.
