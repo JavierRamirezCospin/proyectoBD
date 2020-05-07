@@ -4,6 +4,7 @@ import pymongo
 import webbrowser
 import psycopg2
 import random
+from datetime import date
 
 ##################################################################################################################
                                         #Funciones para el sistema
@@ -61,71 +62,131 @@ def insertNewAlbum(currentUser):
         print("-> Album Registration Failed!")
 
 def insertNewSong(currentUser):
-    #try:
-    cur = con.cursor()
-    songTitle = newSongTitle.get()
-    songAlbum = newSongAlbumName.get()
-    mediaType = newSongMediaType.get()
-    songGenre = newSongGenre.get()
-    songComposer = newSongComposer.get()
-    songMilliseconds = newSongMilliseconds.get()
-    songMilliseconds = int(songMilliseconds)
-    songBytes = newSongBytes.get()
-    songBytes = int(songBytes)
-    songPrice = newSongPrice.get()
-    songPrice = float(songPrice)
-    url = newSongURL.get()
-    cur.execute("""SELECT trackid
-            FROM track
-            ORDER BY trackid DESC
-            LIMIT 1""")
-    tracksIDs = cur.fetchall()
-    lastTrackID = 0
-    for trackID in tracksIDs:
-        lastTrackID = trackID[0]
-        lastTrackID += 1
-        print(str(lastTrackID))
-    dictionary = {'Title':songTitle,'Name':songGenre,'MediaName':mediaType}
-    cur.execute("""SELECT albumid
-                    FROM album
-                    WHERE title = %(Title)s""",dictionary)
-    albumsIDs = cur.fetchall()
-    rightAlbumID = 0
-    for albumID in albumsIDs:
-        rightAlbumID = albumID[0]
-        print(str(rightAlbumID))
-    cur.execute("""SELECT genreid
-                FROM genre
-                WHERE name = %(Name)s""",dictionary)
-    genresIDs = cur.fetchall()
-    rightGenreID = 0
-    for genreID in genresIDs:
-        rightGenreID = genreID[0]
-        print(str(rightGenreID))
-    cur.execute("""SELECT mediatypeid
-            FROM mediatype
-            WHERE name = %(MediaName)s""",dictionary)
-    mediaTypesIDs = cur.fetchall()
-    rightMediaType = 0
-    for mediaTypeID in mediaTypesIDs:
-        rightMediaType = mediaTypeID[0]
-        print(str(rightMediaType))
-    lastDictionary = {'TrackId':lastTrackID,
-                      'Name':songTitle,
-                      'AlbumId':rightAlbumID,
-                      'MediaTypeId':rightMediaType,
-                      'GenreId':rightGenreID,
-                      'Composer':songComposer,
-                      'Milliseconds':songMilliseconds,
-                      'Bytes':songBytes,
-                      'UnitPrice':songPrice,
-                      'songURL':url}
-    cur.execute("""INSERT INTO track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL)
-                VALUES (%(TrackId)s,%(Name)s,%(AlbumId)s,%(MediaTypeId)s,%(GenreId)s,%(Composer)s,%(Milliseconds)s,%(Bytes)s,%(UnitPrice)s,%(songURL)s)""",lastDictionary)
-    con.commit()
-    print("\n-> Song Registered Succesfully!")
-    #except:
-        #print("New Song Registration Failed!")
+    try:
+        cur = con.cursor()
+        songTitle = newSongTitle.get()
+        songAlbum = newSongAlbumName.get()
+        mediaType = newSongMediaType.get()
+        songGenre = newSongGenre.get()
+        songComposer = newSongComposer.get()
+        songMilliseconds = newSongMilliseconds.get()
+        songMilliseconds = int(songMilliseconds)
+        songBytes = newSongBytes.get()
+        songBytes = int(songBytes)
+        songPrice = newSongPrice.get()
+        songPrice = float(songPrice)
+        url = newSongURL.get()
+        cur.execute("""SELECT trackid
+                FROM track
+                ORDER BY trackid DESC
+                LIMIT 1""")
+        tracksIDs = cur.fetchall()
+        lastTrackID = 0
+        for trackID in tracksIDs:
+            lastTrackID = trackID[0]
+            lastTrackID += 1
+            print(str(lastTrackID))
+        dictionary = {'Title':songAlbum,'Name':songGenre,'MediaName':mediaType}
+        cur.execute("""SELECT albumid
+                        FROM album
+                        WHERE title = %(Title)s""",dictionary)
+        albumsIDs = cur.fetchall()
+        rightAlbumID = 0
+        for albumID in albumsIDs:
+            rightAlbumID = albumID[0]
+            print(str(rightAlbumID))
+        cur.execute("""SELECT genreid
+                    FROM genre
+                    WHERE name = %(Name)s""",dictionary)
+        genresIDs = cur.fetchall()
+        rightGenreID = 0
+        for genreID in genresIDs:
+            rightGenreID = genreID[0]
+            print(str(rightGenreID))
+        cur.execute("""SELECT mediatypeid
+                FROM mediatype
+                WHERE name = %(MediaName)s""",dictionary)
+        mediaTypesIDs = cur.fetchall()
+        rightMediaType = 0
+        activa = 1
+        for mediaTypeID in mediaTypesIDs:
+            rightMediaType = mediaTypeID[0]
+            print(str(rightMediaType))
+        lastDictionary = {'TrackId':lastTrackID,
+                          'Name':songTitle,
+                          'AlbumId':rightAlbumID,
+                          'MediaTypeId':rightMediaType,
+                          'GenreId':rightGenreID,
+                          'Composer':songComposer,
+                          'Milliseconds':songMilliseconds,
+                          'Bytes':songBytes,
+                          'UnitPrice':songPrice,
+                          'songURL':url,
+                          'Activa':activa}
+        cur.execute("""INSERT INTO track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL, activa)
+                    VALUES (%(TrackId)s,%(Name)s,%(AlbumId)s,%(MediaTypeId)s,%(GenreId)s,%(Composer)s,%(Milliseconds)s,%(Bytes)s,%(UnitPrice)s,%(songURL)s,%(Activa)s)""",lastDictionary)
+        con.commit()
+        if currentUser['type'] == 'admin':
+            print("\n-> Song Registered Succesfully!")
+        else:
+            cur.execute("""select invoiceid from invoice order by invoiceid desc limit 1;""")
+            lastIDS = cur.fetchall()
+            lastID = 0
+            for lid in lastIDS:
+                lastID = lid[0]
+                lastID += 1
+            userName = currentUser['name']
+            userDictionary = {'Username':userName}
+            cur.execute("""select customerid, address, city, state, country, postalcode
+                        from customer
+                        where username = 'javier'
+                        LIMIT 1;""",userDictionary)
+            userCredentials = cur.fetchall()
+            customerID = 0
+            customerAddress = ""
+            customerCity = ""
+            customerState = ""
+            customerCountry = ""
+            customerPostalCode = ""
+            price = 0.99
+            today = date.today()
+            for userCredential in userCredentials:
+                customerID = userCredential[0]
+                customerAddress = userCredential[1]
+                customerCity = userCredential[2]
+                customerState = userCredential[3]
+                customerCountry = userCredential[4]
+                customerPostalCode = userCredential[5]
+            invoiceDictionary = {'InvoiceID':lastID,
+                               'CustomerID':customerID,
+                               'InvoiceDate':today,
+                               'BillingAddress':customerAddress,
+                               'BillingCity':customerCity,
+                               'BillingState':customerState,
+                               'BillingCountry':customerCountry,
+                               'BillingPostalCode':customerPostalCode,
+                               'UnitPrice':price}
+            cur.execute("""INSERT INTO invoice (invoiceid,customerid,invoicedate,billingaddress,billingcity,billingstate,billingcountry,billingpostalcode,total)
+                        VALUES (%(InvoiceID)s,%(CustomerID)s,%(InvoiceDate)s,%(BillingAddress)s,%(BillingCity)s,%(BillingState)s,%(BillingCountry)s,%(BillingPostalCode)s,%(UnitPrice)s);""",invoiceDictionary)
+            con.commit()
+            cur.execute("""select invoicelineid from invoiceline order by invoicelineid desc limit 1;""")
+            invoiceLIDS = cur.fetchall()
+            lastILID = 0
+            quantity = 1
+            for invoiceLID in invoiceLIDS:
+                lastILID = invoiceLID[0]
+                lastILID += 1
+            invoicelineDictionary = {'InvoiceLineID':lastILID,
+                                    'InvoiceID':lastID,
+                                    'TrackID':lastTrackID,
+                                    'UnitPrice':price,
+                                    'Quantity':quantity}
+            cur.execute("""INSERT INTO invoiceline (invoicelineid,invoiceid,trackid,unitprice,quantity)
+                            VALUES (%(InvoiceLineID)s,%(InvoiceID)s,%(TrackID)s,%(UnitPrice)s,%(Quantity)s);""",invoicelineDictionary)
+            con.commit()
+            print("\n-> Song Registered Succesfully!")
+    except:
+        print("New Song Registration Failed!")
 
 def modifyArtist(currentUser):
     try:
@@ -169,6 +230,54 @@ def modifyAlbum(currentUser):
     except:
         print("\n Album Update Failed!")
 
+def modifySong(currentUser):
+    try:
+        cur = con.cursor()
+        oldSName = oldSongName.get()
+        newSongName = upSongName.get()
+        newSongAlbum = upSongAlbum.get()
+        newSongAlbum = int(newSongAlbum)
+        newSongMedia = upSongMediaType.get()
+        newSongMedia = int(newSongMedia)
+        newSongGenre = upSongGenre.get()
+        newSongGenre = int(newSongGenre)
+        newSongComposer = upSongComposer.get()
+        newSongMilliseconds = upSongMilliseconds.get()
+        newSongMilliseconds = int(newSongMilliseconds)
+        newSongBytes = upSongBytes.get()
+        newSongBytes = int(newSongBytes)
+        newSongPrice = upSongPrice.get()
+        newSongPrice = float(newSongPrice)
+        newSongURL = upSongURL.get()
+        dictionary = {'OldSongName':oldSName,
+                      'NewSongName':newSongName,
+                      'NewSongAlbum':newSongAlbum,
+                      'NewSongMedia':newSongMedia,
+                      'NewSongGenre':newSongGenre,
+                      'NewSongComposer':newSongComposer,
+                      'NewSongMilliseconds':newSongMilliseconds,
+                      'NewSongBytes':newSongBytes,
+                      'NewSongPrice':newSongPrice,
+                      'NewSongURL':newSongURL}
+        cur.execute("""UPDATE track
+                    SET name = %(NewSongName)s,
+                        albumid = %(NewSongAlbum)s,
+                        mediatypeid = %(NewSongMedia)s,
+                        genreid = %(NewSongGenre)s,
+                        composer = %(NewSongComposer)s,
+                        milliseconds = %(NewSongMilliseconds)s,
+                        bytes = %(NewSongBytes)s,
+                        unitprice = %(NewSongPrice)s,
+                        songurl = %(NewSongURL)s
+                    WHERE name = %(OldSongName)s;""",dictionary)
+        con.commit()
+        cur.close()
+        print("\n-> Song Updated Succesfully!")
+    except:
+        print("\n-> Song Update Failed! Check:")
+        print("     1. Album, MediaType or Album are numbers, not letters")
+        print("     2. Album, MediaType or Album exist")
+        
 def removeArtist(currentUser):
     try:        
         cur = con.cursor()
@@ -177,6 +286,7 @@ def removeArtist(currentUser):
         cur.execute("""DELETE FROM artist
                     WHERE name = %(Name)s""",dictionary)
         con.commit()
+        cur.close()
         print("\n-> Artist removed Succesfully!")
     except:
         print("\n-> Artist removal Failed!")
@@ -203,6 +313,7 @@ def removeAlbum(currentUser):
                 cur.execute("""DELETE FROM album
                             WHERE title = %(Title)s AND artistid = %(ArtistID)s""",dictionary2)
                 con.commit()
+                cur.close()
                 print("\n-> Album Removed Succesfully!")
     except:
         print("\n-> Album Removal Failed!")
@@ -229,6 +340,7 @@ def removeSong(currentUser):
                 cur.execute("""DELETE FROM track
                             WHERE trackid = %(TrackID)s AND name = %(Name)s;""",dictionary2)
                 con.commit()
+                cur.close()
                 print("\n-> Song Removed Succesfully!")
     except:
         print("\n-> Song Removal Failed!")
@@ -305,7 +417,7 @@ def changeUserPermission(currentUser):
 def listenAdminSongsFunction(currentUser):
     try:
         cur = con.cursor()
-        message = "\n-> Song not found!"
+        message = "\n-> Song not found, please try again!"
         songName = listenSongName2.get()
         dictionary = {'Name':songName}
         cur.execute("""SELECT songURL
@@ -325,7 +437,7 @@ def listenAdminSongsFunction(currentUser):
 def listenCustomerSongsFunction(currentUser):
     try:
         cur = con.cursor()
-        message = "\n-> Song not found on user!"
+        message = "\n-> Song not found on user or is DEACTIVATED!"
         username = currentUser['name']
         userType = currentUser['type']
         songTitle = listenSongName.get()
@@ -344,7 +456,7 @@ def listenCustomerSongsFunction(currentUser):
                 from invoiceline) mid
                 left join track on track.trackid = mid.INVOICELINETRACKID
                 left join invoice on invoice.invoiceid = mid.INVOICELINEID
-                where invoice.customerid = %(customerID)s;""",dictionary2)
+                where invoice.customerid = %(customerID)s and track.activa = 1;""",dictionary2)
         rows = cur.fetchall()
         for r in rows:
             if songTitle == r[0]:
@@ -658,7 +770,7 @@ def customer1View(currentUser):
     playlistDuration.grid(row=6,column=2)
     longestSongs = tkinter.Button(customer1View, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(currentUser))
     longestSongs.grid(row=7,column=2)
-    usersSongs = tkinter.Button(customer1View, text="Users Songs",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    usersSongs = tkinter.Button(customer1View, text="Users Songs",width=20,height=1, command = lambda: mostUsersUploadsView(currentUser))
     usersSongs.grid(row=8,column=2)
     averageGenre = tkinter.Button(customer1View, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(currentUser))
     averageGenre.grid(row=9,column=2)
@@ -719,7 +831,7 @@ def customer2View(currentUser):
     playlistDuration.grid(row=6,column=2)
     longestSongs = tkinter.Button(customer2View, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(currentUser))
     longestSongs.grid(row=7,column=2)
-    usersSongs = tkinter.Button(customer2View, text="Users Songs",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    usersSongs = tkinter.Button(customer2View, text="Users Songs",width=20,height=1, command = lambda: mostUsersUploadsView(currentUser))
     usersSongs.grid(row=8,column=2)
     averageGenre = tkinter.Button(customer2View, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(currentUser))
     averageGenre.grid(row=9,column=2)
@@ -782,7 +894,7 @@ def customer3View(currentUser):
     playlistDuration.grid(row=6,column=2)
     longestSongs = tkinter.Button(customer3View, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(currentUser))
     longestSongs.grid(row=7,column=2)
-    usersSongs = tkinter.Button(customer3View, text="Users Songs",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    usersSongs = tkinter.Button(customer3View, text="Users Songs",width=20,height=1, command = lambda: mostUsersUploadsView(currentUser))
     usersSongs.grid(row=8,column=2)
     averageGenre = tkinter.Button(customer3View, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(currentUser))
     averageGenre.grid(row=9,column=2)
@@ -850,7 +962,7 @@ def adminView(currentUser):
     playlistDuration.grid(row=6,column=2)
     longestSongs = tkinter.Button(adminWindow, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(currentUser))
     longestSongs.grid(row=7,column=2)
-    usersSongs = tkinter.Button(adminWindow, text="Users Songs",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    usersSongs = tkinter.Button(adminWindow, text="Users Songs",width=20,height=1, command = lambda: mostUsersUploadsView(currentUser))
     usersSongs.grid(row=8,column=2)
     averageGenre = tkinter.Button(adminWindow, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(currentUser))
     averageGenre.grid(row=9,column=2)
@@ -1084,6 +1196,7 @@ def modifyAlbumView(currentUser):
     mdAlbumWindow.mainloop()
 
 def modifySongView(currentUser):
+    global oldSongName, upSongName, upSongAlbum, upSongMediaType, upSongGenre, upSongComposer, upSongMilliseconds, upSongBytes, upSongURL, upSongPrice
     mdSongWindow = tkinter.Tk()
     for i in range(7):
         mdSongWindow.columnconfigure(i,weight=1)
@@ -1092,66 +1205,72 @@ def modifySongView(currentUser):
     space00 = tkinter.Label(mdSongWindow, text=" ").grid(row=0,column=5)
     titleReg = tkinter.Label(mdSongWindow, text="Modify Song")
     titleReg.grid(row=2,column=3)
-    titleReg.config(font=("Steamer",20,"bold"))
+    titleReg.config(font=("Steamer",17,"bold"))
     space0 = tkinter.Label(mdSongWindow, text=" ").grid(row=4,column=3)
     Instructions = tkinter.Label(mdSongWindow, text="Old Song Name")
     Instructions.grid(row=6,column=2)
-    Instructions.config(font=("Helvetica", 14))
-    oldSongName = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    Instructions.config(font=("Helvetica", 12,"bold"))
+    oldSongName = tkinter.Entry(mdSongWindow, font="Helvetica 10")
     oldSongName.grid(row=7,column=2)
     Instructions2 = tkinter.Label(mdSongWindow, text="New Song Name")
     Instructions2.grid(row=6,column=4)
-    Instructions2.config(font=("Helvetica", 14))
-    upSongName = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    Instructions2.config(font=("Helvetica", 12,"bold"))
+    upSongName = tkinter.Entry(mdSongWindow, font="Helvetica 10")
     upSongName.grid(row=7,column=4)
     space1 = tkinter.Label(mdSongWindow, text=" ").grid(row=8,column=4)
     Instructions3 = tkinter.Label(mdSongWindow, text="New Album Name")
     Instructions3.grid(row=9,column=4)
-    Instructions3.config(font=("Helvetica", 14))
-    upSongAlbum = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    Instructions3.config(font=("Helvetica", 12,"bold"))
+    upSongAlbum = tkinter.Entry(mdSongWindow, font="Helvetica 10")
     upSongAlbum.grid(row=10,column=4)
     space2 = tkinter.Label(mdSongWindow, text=" ").grid(row=11,column=4)
     Instructions4 = tkinter.Label(mdSongWindow, text="New Media Type")
     Instructions4.grid(row=12,column=4)
-    Instructions4.config(font=("Helvetica", 14))
-    upSongMediaType = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    Instructions4.config(font=("Helvetica", 12,"bold"))
+    upSongMediaType = tkinter.Entry(mdSongWindow, font="Helvetica 10")
     upSongMediaType.grid(row=13,column=4)
     space3 = tkinter.Label(mdSongWindow, text=" ").grid(row=14,column=4)
     Instructions5 = tkinter.Label(mdSongWindow, text="New Genre Name")
     Instructions5.grid(row=15,column=4)
-    Instructions5.config(font=("Helvetica", 14))
-    upSongGenre = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    Instructions5.config(font=("Helvetica", 12,"bold"))
+    upSongGenre = tkinter.Entry(mdSongWindow, font="Helvetica 10")
     upSongGenre.grid(row=16,column=4)
     space4 = tkinter.Label(mdSongWindow, text=" ").grid(row=17,column=4)
     Instructions6 = tkinter.Label(mdSongWindow, text="New Composer")
     Instructions6.grid(row=18,column=4)
-    Instructions6.config(font=("Helvetica", 14))
-    upSongComposer = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    Instructions6.config(font=("Helvetica", 12,"bold"))
+    upSongComposer = tkinter.Entry(mdSongWindow, font="Helvetica 10")
     upSongComposer.grid(row=19,column=4)
     space5 = tkinter.Label(mdSongWindow, text=" ").grid(row=20,column=4)
     Instructions7 = tkinter.Label(mdSongWindow, text="New Milliseconds")
     Instructions7.grid(row=21,column=4)
-    Instructions7.config(font=("Helvetica", 14))
-    upSongMilliseconds = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    Instructions7.config(font=("Helvetica", 12,"bold"))
+    upSongMilliseconds = tkinter.Entry(mdSongWindow, font="Helvetica 10")
     upSongMilliseconds.grid(row=22,column=4)
     space6 = tkinter.Label(mdSongWindow, text=" ").grid(row=23,column=4)
     Instructions8 = tkinter.Label(mdSongWindow, text="New Bytes")
     Instructions8.grid(row=24,column=4)
-    Instructions8.config(font=("Helvetica", 14))
-    upSongBytes = tkinter.Entry(mdSongWindow, font="Helvetica 11")
+    Instructions8.config(font=("Helvetica", 12,"bold"))
+    upSongBytes = tkinter.Entry(mdSongWindow, font="Helvetica 10")
     upSongBytes.grid(row=25,column=4)
     space7 = tkinter.Label(mdSongWindow, text=" ").grid(row=26,column=4)
     Instructions9 = tkinter.Label(mdSongWindow, text="New Unit Price")
     Instructions9.grid(row=27,column=4)
-    Instructions9.config(font=("Helvetica", 14))
-    upSongBytes = tkinter.Entry(mdSongWindow, font="Helvetica 11")
-    upSongBytes.grid(row=28,column=4)
+    Instructions9.config(font=("Helvetica", 12,"bold"))
+    upSongPrice = tkinter.Entry(mdSongWindow, font="Helvetica 10")
+    upSongPrice.grid(row=28,column=4)
     space2 = tkinter.Label(mdSongWindow, text="").grid(row=29,column=2)
-    updateAlbumBtn = tkinter.Button(mdSongWindow, text="Update Song", padx=15, pady=5, bg="#c8c8c8")
-    updateAlbumBtn.grid(row=30,column=3)
-    space3 = tkinter.Label(mdSongWindow, text="").grid(row=31,column=3)
+    Instructions10 = tkinter.Label(mdSongWindow, text="New URL")
+    Instructions10.grid(row=30,column=4)
+    Instructions10.config(font=("Helvetica", 12,"bold"))
+    upSongURL = tkinter.Entry(mdSongWindow, font="Helvetica 10")
+    upSongURL.grid(row=31,column=4)
+    space2 = tkinter.Label(mdSongWindow, text="").grid(row=32,column=2)
+    updateSongBtn = tkinter.Button(mdSongWindow, text="Update Song", padx=15, pady=5, bg="#c8c8c8", command = lambda: modifySong(currentUser))
+    updateSongBtn.grid(row=33,column=3)
+    space3 = tkinter.Label(mdSongWindow, text="").grid(row=34,column=3)
     backModifyBtn = tkinter.Button(mdSongWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: loginView(con))
-    backModifyBtn.grid(row=32,column=3)
+    backModifyBtn.grid(row=35,column=3)
     mdSongWindow.mainloop()
 
 def removeArtistView(currentUser):
@@ -1574,6 +1693,54 @@ def longestSongsView(currentUser):
     backModifyBtn.grid(row=11,column=2)
     longestSongs.mainloop()
 
+def mostUsersUploadsView(currentUser):
+    cur = con.cursor()
+    userUploads = tkinter.Tk()
+    userUploads.geometry("1400x500")
+    for i in range(5):
+        userUploads.columnconfigure(i,weight=1)
+    userUploads.title("User Uploads")
+    space00 = tkinter.Label(userUploads, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(userUploads, text="Users Uploads")
+    windowTitle.config(font=("Helvetica",15,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(userUploads, text="").grid(row=2,column=3)
+    subTitle0 = tkinter.Label(userUploads, text="Number")
+    subTitle0.config(font=("Helvetica",15,"bold"))
+    subTitle0.grid(row=3,column=1)
+    subTitle = tkinter.Label(userUploads, text="User Name")
+    subTitle.config(font=("Helvetica",15,"bold"))
+    subTitle.grid(row=3,column=2)
+    subTitle2 = tkinter.Label(userUploads, text="Number of Uploads)")
+    subTitle2.config(font=("Helvetica",15,"bold"))
+    subTitle2.grid(row=3,column=3)
+    cur.execute("""select customer.username, mid.counting
+            from (select customerid, count(customerid) as counting
+            from invoice
+            group by customerid) mid
+            left join customer on customer.customerid = mid.customerid
+            limit 5;""")
+    rows = cur.fetchall()
+    i = 4
+    x = 1
+    for r in rows:
+        number = tkinter.Label(userUploads, text=x)
+        number.config(font=("Helvetica",15))
+        number.grid(row=i,column=1)
+        us = tkinter.Label(userUploads,text=r[0])
+        us.config(font=("Helvetica",15))
+        us.grid(row=i,column=2)
+        number2 = tkinter.Label(userUploads,text=str(r[1]))
+        number2.config(font=("Helvetica",15))
+        number2.grid(row=i,column=3)
+        i += 1
+        x += 1
+    space1 = tkinter.Label(userUploads, text="").grid(row=9,column=3)
+    space2 = tkinter.Label(userUploads, text="").grid(row=10,column=3)
+    backModifyBtn = tkinter.Button(userUploads, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn.grid(row=11,column=2)
+    userUploads.mainloop()
+
 def averageGDView(currentUser):
     cur = con.cursor()
     averageGD = tkinter.Tk()
@@ -1795,7 +1962,10 @@ def listenSongsCustomerView(currentUser):
     subTitle2 = tkinter.Label(listenSongsCustomer, text="Song Name")
     subTitle2.config(font=("Helvetica",15,"bold"))
     subTitle2.grid(row=4,column=3)
-    cur.execute("""select mid.INVOICELINEID, track.name
+    subTitle2 = tkinter.Label(listenSongsCustomer, text="Active")
+    subTitle2.config(font=("Helvetica",15,"bold"))
+    subTitle2.grid(row=4,column=4)
+    cur.execute("""select mid.INVOICELINEID, track.name, track.activa
                 from (select invoiceline.invoiceid as INVOICELINEID, invoiceline.trackid as INVOICELINETRACKID
                 from invoiceline) mid
                 left join track on track.trackid = mid.INVOICELINETRACKID
@@ -1815,6 +1985,14 @@ def listenSongsCustomerView(currentUser):
         songname = tkinter.Label(listenSongsCustomer,text=r[1])
         songname.config(font=("Helvetica",15))
         songname.grid(row=i,column=3)
+        if r[2] == 1:
+            songactive = tkinter.Label(listenSongsCustomer,text="YES")
+            songactive.config(font=("Helvetica",15))
+            songactive.grid(row=i,column=4)
+        elif r[2] == 2:
+            songactive = tkinter.Label(listenSongsCustomer,text="NO")
+            songactive.config(font=("Helvetica",15))
+            songactive.grid(row=i,column=4)
         songs.append(r[1])
         i += 1
         x += 1
