@@ -6,13 +6,14 @@ import psycopg2
 import random
 from datetime import date
 import csv
-from reportlab.platypus import SimpleDocTemplate
+from reportlab.platypus import SimpleDocTemplate,Table,TableStyle
+from reportlab.lib import colors
 
 ##################################################################################################################
                                         #Funciones para el sistema
 ##################################################################################################################
 def logOut(View,currentUser):
-    View.quit()
+    View.destroy()
     currentUser = {}
     loginView(con)
 
@@ -496,86 +497,86 @@ def addSongToWishlist(currentUser,wishlist):
         print("\n-> No song with that name!")
 
 def songPayment(currentUser,wishlist,totalprice):
-    try:
-        cur = con.cursor()
-        songsList = []
-        cur.execute("""select invoiceid from invoice order by invoiceid desc limit 1;""")
-        lastIDS = cur.fetchall()
-        lastID = 0
-        for lid in lastIDS:
-            lastID = lid[0]
-            lastID += 1
-        userName = currentUser['name']
-        userDictionary = {'Username':userName}
-        cur.execute("""select customerid, address, city, state, country, postalcode
-                    from customer
-                    where username = %(Username)s
-                    LIMIT 1;""",userDictionary)
-        userCredential = cur.fetchall()
-        customerID = 0
-        customerAddress = ""
-        customerCity = ""
-        customerState = ""
-        customerCountry = ""
-        customerPostalCode = ""
-        price = totalprice
-        today = date.today()
-        for userCredential in userCredential:
-            customerID = userCredential[0]
-            customerAddress = userCredential[1]
-            customerCity = userCredential[2]
-            customerState = userCredential[3]
-            customerCountry = userCredential[4]
-            customerPostalCode = userCredential[5]
-        invoiceDictionary = {'InvoiceID':lastID,
-                           'CustomerID':customerID,
-                           'InvoiceDate':today,
-                           'BillingAddress':customerAddress,
-                           'BillingCity':customerCity,
-                           'BillingState':customerState,
-                           'BillingCountry':customerCountry,
-                           'BillingPostalCode':customerPostalCode,
-                           'UnitPrice':price}
-        cur.execute("""INSERT INTO invoice (invoiceid,customerid,invoicedate,billingaddress,billingcity,billingstate,billingcountry,billingpostalcode,total)
-                   VALUES (%(InvoiceID)s,%(CustomerID)s,%(InvoiceDate)s,%(BillingAddress)s,%(BillingCity)s,%(BillingState)s,%(BillingCountry)s,%(BillingPostalCode)s,%(UnitPrice)s);""",invoiceDictionary)
+    #try:
+    cur = con.cursor()
+    songsList = []
+    cur.execute("""select invoiceid from invoice order by invoiceid desc limit 1;""")
+    lastIDS = cur.fetchall()
+    lastID = 0
+    for lid in lastIDS:
+        lastID = lid[0]
+        lastID += 1
+    userName = currentUser['name']
+    userDictionary = {'Username':userName}
+    cur.execute("""select customerid, address, city, state, country, postalcode
+                from customer
+                where username = %(Username)s
+                LIMIT 1;""",userDictionary)
+    userCredential = cur.fetchall()
+    customerID = 0
+    customerAddress = ""
+    customerCity = ""
+    customerState = ""
+    customerCountry = ""
+    customerPostalCode = ""
+    price = totalprice
+    today = date.today()
+    for userCredential in userCredential:
+        customerID = userCredential[0]
+        customerAddress = userCredential[1]
+        customerCity = userCredential[2]
+        customerState = userCredential[3]
+        customerCountry = userCredential[4]
+        customerPostalCode = userCredential[5]
+    invoiceDictionary = {'InvoiceID':lastID,
+                       'CustomerID':customerID,
+                       'InvoiceDate':today,
+                       'BillingAddress':customerAddress,
+                       'BillingCity':customerCity,
+                       'BillingState':customerState,
+                       'BillingCountry':customerCountry,
+                       'BillingPostalCode':customerPostalCode,
+                       'UnitPrice':price}
+    cur.execute("""INSERT INTO invoice (invoiceid,customerid,invoicedate,billingaddress,billingcity,billingstate,billingcountry,billingpostalcode,total)
+               VALUES (%(InvoiceID)s,%(CustomerID)s,%(InvoiceDate)s,%(BillingAddress)s,%(BillingCity)s,%(BillingState)s,%(BillingCountry)s,%(BillingPostalCode)s,%(UnitPrice)s);""",invoiceDictionary)
+    con.commit()
+    for song in wishlist:
+        cur.execute("""select invoicelineid from invoiceline order by invoicelineid desc limit 1;""")
+        invoiceLIDS = cur.fetchall()
+        lastILID = 0
+        quantity = 1
+        for invoiceLID in invoiceLIDS:
+            lastILID = invoiceLID[0]
+            lastILID += 1
+        rightTrackID = 0
+        songName = song
+        songDictionary = {'SongName':songName}
+        cur.execute("""SELECT trackid
+                FROM track
+                where name = %(SongName)s
+                LIMIT 1""",songDictionary)
+        tracksIDs = cur.fetchall()
+        price = 0.99
+        quantity = 1
+        for trackID in tracksIDs:
+            rightTrackID = trackID[0]
+        invoicelineDictionary = {'InvoiceLineID':lastILID,
+                                'InvoiceID':lastID,
+                                'TrackID':rightTrackID,
+                                'UnitPrice':price,
+                                'Quantity':quantity}
+        cur.execute("""INSERT INTO invoiceline (invoicelineid,invoiceid,trackid,unitprice,quantity)
+                        VALUES (%(InvoiceLineID)s,%(InvoiceID)s,%(TrackID)s,%(UnitPrice)s,%(Quantity)s);""",invoicelineDictionary)
         con.commit()
-        for song in wishlist:
-            cur.execute("""select invoicelineid from invoiceline order by invoicelineid desc limit 1;""")
-            invoiceLIDS = cur.fetchall()
-            lastILID = 0
-            quantity = 1
-            for invoiceLID in invoiceLIDS:
-                lastILID = invoiceLID[0]
-                lastILID += 1
-            rightTrackID = 0
-            songName = song
-            songDictionary = {'SongName':songName}
-            cur.execute("""SELECT trackid
-                    FROM track
-                    where name = %(SongName)s
-                    LIMIT 1""",songDictionary)
-            tracksIDs = cur.fetchall()
-            price = 0.99
-            quantity = 1
-            for trackID in tracksIDs:
-                rightTrackID = trackID[0]
-            invoicelineDictionary = {'InvoiceLineID':lastILID,
-                                    'InvoiceID':lastID,
-                                    'TrackID':rightTrackID,
-                                    'UnitPrice':price,
-                                    'Quantity':quantity}
-            cur.execute("""INSERT INTO invoiceline (invoicelineid,invoiceid,trackid,unitprice,quantity)
-                            VALUES (%(InvoiceLineID)s,%(InvoiceID)s,%(TrackID)s,%(UnitPrice)s,%(Quantity)s);""",invoicelineDictionary)
-            con.commit()
-            songsList.append(invoicelineDictionary)
-        print("\n-> Songs Purchase Succesfully!")
-        csvGenerator(currentUser,songsList,totalprice)
-        print("\n-> CSV File Generated Succesfully!")
-        pdfGenerator(currentUser,songsList,totalprice)
-        print("\n-> PDF File Generated Succesfully!")
-        cur.close()
-    except:
-        print("\n-> Song purchase Failed!")
+        songsList.append(invoicelineDictionary)
+    print("\n-> Songs Purchase Succesfully!")
+    csvGenerator(currentUser,songsList,totalprice)
+    print("\n-> CSV File Generated Succesfully!")
+    pdfGenerator(currentUser,songsList,totalprice)
+    print("\n-> PDF File Generated Succesfully!")
+    cur.close()
+    #except:
+        #print("\n-> Song purchase Failed!")
 
 def csvGenerator(currentUser,songsList,totalprice):
     cur = con.cursor()
@@ -618,7 +619,13 @@ def pdfGenerator(currentUser,songsList,totalprice):
             data.append(songPrice)
             data.append(songQuantity)
             tdata.append(data)
-    print(tdata)
+    t = Table(tdata)
+    tstyle = TableStyle([("GRID",(0,0),(-1,-1),1,colors.black),
+                         ("BOX",(0,0),(-1,-5),1,colors.black),
+                         ("BACKGROUND",(0,0),(-1,-3),colors.grey)])
+    t.setStyle(tstyle)
+    flow_obj.append(t)
+    pdf.build(flow_obj)
     cur.close()    
     
 def registerUser(con):
