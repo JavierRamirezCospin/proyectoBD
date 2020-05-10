@@ -5,6 +5,8 @@ import webbrowser
 import psycopg2
 import random
 from datetime import date
+import csv
+from reportlab.platypus import SimpleDocTemplate
 
 ##################################################################################################################
                                         #Funciones para el sistema
@@ -30,6 +32,7 @@ def insertNewArtist(currentUser):
         cur.execute("""INSERT INTO artist (artistid, name) VALUES (%(ArtistId)s,%(Name)s)""",dictionary)
         con.commit()
         print("->Artist Registered Succesfully!")
+        cur.close()
     except:
         print("-> Artist Registration Failed!")
 
@@ -58,6 +61,7 @@ def insertNewAlbum(currentUser):
                             VALUES (%(AlbumId)s,%(Title)s,%(ArtistId)s)""",dictionary2)
                 con.commit()
                 print("-> Album Registered Succesfully!")
+        cur.close()
     except:
         print("-> Album Registration Failed!")
 
@@ -139,7 +143,7 @@ def insertNewSong(currentUser):
             userDictionary = {'Username':userName}
             cur.execute("""select customerid, address, city, state, country, postalcode
                         from customer
-                        where username = 'javier'
+                        where username = %(Username)s
                         LIMIT 1;""",userDictionary)
             userCredentials = cur.fetchall()
             customerID = 0
@@ -185,6 +189,7 @@ def insertNewSong(currentUser):
                             VALUES (%(InvoiceLineID)s,%(InvoiceID)s,%(TrackID)s,%(UnitPrice)s,%(Quantity)s);""",invoicelineDictionary)
             con.commit()
             print("\n-> Song Registered Succesfully!")
+        cur.close()
     except:
         print("New Song Registration Failed!")
 
@@ -227,6 +232,7 @@ def modifyAlbum(currentUser):
                         WHERE title = %(OldAlbum)s""",finalDictionary)
             con.commit()
         print("\n-> Album Updated Succesfully!")
+        cur.close()
     except:
         print("\n Album Update Failed!")
 
@@ -386,6 +392,7 @@ def songActivation(currentUser):
                 print("-> Song Activated Succesfully!")
             elif activo[0] == 1:
                 print("-> Song is Active!")
+        cur.close()
     except:
         print("-> Song Activation Failed!")
 
@@ -411,6 +418,7 @@ def changeUserPermission(currentUser):
                         WHERE username = %(username)s""",dictionary)
                 con.commit()
                 print("\n-> Customer Permission Updated!")
+        cur.close()
     except:
         print("\n-> User Permission Failed!")
 
@@ -431,6 +439,7 @@ def listenAdminSongsFunction(currentUser):
             webbrowser.open(url,new=new)
             message = "\n-> Playing song..."
         print(message)
+        cur.close()
     except:
         print("-> Song Playback Failed!")
 
@@ -465,11 +474,153 @@ def listenCustomerSongsFunction(currentUser):
                 webbrowser.open(url,new=new)
                 message = "\n-> Playing song..."
         print(message)
+        cur.close()
     except:
         print("\n-> Song not found! Problem because:")
         print("    1. Song is typed incorrectly")
         print("    2. Song does not have a URL")
 
+def addSongToWishlist(currentUser,wishlist):
+    try:
+        cur = con.cursor()
+        songName = purchaseSongName.get()
+        dictionary = {'Name':songName}
+        cur.execute("""select name from track where name = %(Name)s limit 1;""",dictionary)
+        rows = cur.fetchall()
+        for r in rows:
+            wishlist.append(r[0])
+        print("\n-> Song added to Wishlist!")
+        print("-> There are now " + str(len(wishlist)) + " items in your wishlist!")
+        cur.close()
+    except:
+        print("\n-> No song with that name!")
+
+def songPayment(currentUser,wishlist,totalprice):
+    try:
+        cur = con.cursor()
+        songsList = []
+        cur.execute("""select invoiceid from invoice order by invoiceid desc limit 1;""")
+        lastIDS = cur.fetchall()
+        lastID = 0
+        for lid in lastIDS:
+            lastID = lid[0]
+            lastID += 1
+        userName = currentUser['name']
+        userDictionary = {'Username':userName}
+        cur.execute("""select customerid, address, city, state, country, postalcode
+                    from customer
+                    where username = %(Username)s
+                    LIMIT 1;""",userDictionary)
+        userCredential = cur.fetchall()
+        customerID = 0
+        customerAddress = ""
+        customerCity = ""
+        customerState = ""
+        customerCountry = ""
+        customerPostalCode = ""
+        price = totalprice
+        today = date.today()
+        for userCredential in userCredential:
+            customerID = userCredential[0]
+            customerAddress = userCredential[1]
+            customerCity = userCredential[2]
+            customerState = userCredential[3]
+            customerCountry = userCredential[4]
+            customerPostalCode = userCredential[5]
+        invoiceDictionary = {'InvoiceID':lastID,
+                           'CustomerID':customerID,
+                           'InvoiceDate':today,
+                           'BillingAddress':customerAddress,
+                           'BillingCity':customerCity,
+                           'BillingState':customerState,
+                           'BillingCountry':customerCountry,
+                           'BillingPostalCode':customerPostalCode,
+                           'UnitPrice':price}
+        cur.execute("""INSERT INTO invoice (invoiceid,customerid,invoicedate,billingaddress,billingcity,billingstate,billingcountry,billingpostalcode,total)
+                   VALUES (%(InvoiceID)s,%(CustomerID)s,%(InvoiceDate)s,%(BillingAddress)s,%(BillingCity)s,%(BillingState)s,%(BillingCountry)s,%(BillingPostalCode)s,%(UnitPrice)s);""",invoiceDictionary)
+        con.commit()
+        for song in wishlist:
+            cur.execute("""select invoicelineid from invoiceline order by invoicelineid desc limit 1;""")
+            invoiceLIDS = cur.fetchall()
+            lastILID = 0
+            quantity = 1
+            for invoiceLID in invoiceLIDS:
+                lastILID = invoiceLID[0]
+                lastILID += 1
+            rightTrackID = 0
+            songName = song
+            songDictionary = {'SongName':songName}
+            cur.execute("""SELECT trackid
+                    FROM track
+                    where name = %(SongName)s
+                    LIMIT 1""",songDictionary)
+            tracksIDs = cur.fetchall()
+            price = 0.99
+            quantity = 1
+            for trackID in tracksIDs:
+                rightTrackID = trackID[0]
+            invoicelineDictionary = {'InvoiceLineID':lastILID,
+                                    'InvoiceID':lastID,
+                                    'TrackID':rightTrackID,
+                                    'UnitPrice':price,
+                                    'Quantity':quantity}
+            cur.execute("""INSERT INTO invoiceline (invoicelineid,invoiceid,trackid,unitprice,quantity)
+                            VALUES (%(InvoiceLineID)s,%(InvoiceID)s,%(TrackID)s,%(UnitPrice)s,%(Quantity)s);""",invoicelineDictionary)
+            con.commit()
+            songsList.append(invoicelineDictionary)
+        print("\n-> Songs Purchase Succesfully!")
+        csvGenerator(currentUser,songsList,totalprice)
+        print("\n-> CSV File Generated Succesfully!")
+        pdfGenerator(currentUser,songsList,totalprice)
+        print("\n-> PDF File Generated Succesfully!")
+        cur.close()
+    except:
+        print("\n-> Song purchase Failed!")
+
+def csvGenerator(currentUser,songsList,totalprice):
+    cur = con.cursor()
+    client = currentUser['name']
+    with open(client+'.csv', 'w', newline='') as f:
+        fieldnames = ['invoiceLineID','invoiceID','TrackID','UnitPrice','Quantity']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for song in songsList:
+            songILID = song['InvoiceLineID']
+            songIID = song['InvoiceID']
+            songID = song['TrackID']
+            songPrice = song['UnitPrice']
+            songQuantity = song['Quantity']
+            writer.writerow({'invoiceLineID':songILID,
+                             'invoiceID':songIID,
+                             'TrackID':songID,
+                             'UnitPrice':songPrice,
+                             'Quantity':songQuantity})
+    cur.close()
+
+def pdfGenerator(currentUser,songsList,totalprice):
+    cur = con.cursor()
+    client = currentUser['name']
+    pdf = SimpleDocTemplate("PurchaseCertification-"+client+".pdf")
+    flow_obj = []
+    with open(client+'.csv') as f1:
+        csvdata = csv.reader(f1,delimiter=",")
+        tdata = []
+        for row in csvdata:
+            data = []
+            songInvoiceLineID = row[0]
+            songInvoiceID = row[1]
+            songID = row[2]
+            songPrice = row[3]
+            songQuantity = row[4]
+            data.append(songInvoiceLineID)
+            data.append(songInvoiceID)
+            data.append(songID)
+            data.append(songPrice)
+            data.append(songQuantity)
+            tdata.append(data)
+    print(tdata)
+    cur.close()    
+    
 def registerUser(con):
     try:
         cur = con.cursor()
@@ -547,6 +698,7 @@ def registerUser(con):
                         %(rol)s)""",newCustomer)
             con.commit()
             print("\n->User registered succesfully!")
+        cur.close()
     except:
         print("\n->Registration failed!")
 
@@ -590,6 +742,7 @@ def loginUser(con):
                     elif userType == 3:
                         currentUser['type'] = 'Tier 3'
                         customer3View(currentUser)
+        cur.close()
     except:
         print("Login Failed")
 
@@ -781,7 +934,7 @@ def customer1View(currentUser):
     listenSongs = tkinter.Button(customer1View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsCustomerView(currentUser))
     listenSongs.grid(row=4,column=3)
     space4 = tkinter.Label(customer1View, text="").grid(row=5,column=3)
-    purchaseSongs = tkinter.Button(customer1View, text="Purchase Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    purchaseSongs = tkinter.Button(customer1View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(currentUser))
     purchaseSongs.grid(row=6,column=3)
     space1 = tkinter.Label(customer1View, text="").grid(row=7,column=1)
     space2 = tkinter.Label(customer1View, text="").grid(row=8,column=1)
@@ -842,7 +995,7 @@ def customer2View(currentUser):
     listenSongs = tkinter.Button(customer2View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsCustomerView(currentUser))
     listenSongs.grid(row=4,column=3)
     space4 = tkinter.Label(customer2View, text="").grid(row=5,column=3)
-    purchaseSongs = tkinter.Button(customer2View, text="Purchase Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    purchaseSongs = tkinter.Button(customer2View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(currentUser))
     purchaseSongs.grid(row=6,column=3)
     space0 = tkinter.Label(customer2View, text="").grid(row=10,column=1)
     space0 = tkinter.Label(customer2View, text="").grid(row=11,column=1)
@@ -905,7 +1058,7 @@ def customer3View(currentUser):
     listenSongs = tkinter.Button(customer3View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsCustomerView(currentUser))
     listenSongs.grid(row=4,column=3)
     space4 = tkinter.Label(customer3View, text="").grid(row=5,column=3)
-    purchaseSongs = tkinter.Button(customer3View, text="Purchase Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    purchaseSongs = tkinter.Button(customer3View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(currentUser))
     purchaseSongs.grid(row=6,column=3)
     space0 = tkinter.Label(customer3View, text="").grid(row=15,column=1)
     space0 = tkinter.Label(customer3View, text="").grid(row=16,column=1)
@@ -1937,7 +2090,7 @@ def listenSongsCustomerView(currentUser):
         dictionary2 = {'CustomerId':customerid}
     for i in range(5):
         listenSongsCustomer.columnconfigure(i,weight=1)
-    listenSongsCustomer.title("Diverse Artists")
+    listenSongsCustomer.title("Listen Songs")
     space00 = tkinter.Label(listenSongsCustomer, text="").grid(row=0,column=3)
     windowTitle = tkinter.Label(listenSongsCustomer, text="LISTEN")
     windowTitle.config(font=("Helvetica",15,"bold"))
@@ -2001,6 +2154,95 @@ def listenSongsCustomerView(currentUser):
     backModifyBtn = tkinter.Button(listenSongsCustomer, text="Back", padx=15, pady=5, bg="#c8c8c8")
     backModifyBtn.grid(row=17,column=3)
     listenSongsCustomer.mainloop()
+
+def purchaseSongsView(currentUser):
+    global purchaseSongName
+    purchaseSongs = tkinter.Tk()
+    purchaseSongs.geometry("1000x350")
+    purchaseSongs.title("D")
+    wishlist = []
+    for i in range(5):
+        purchaseSongs.columnconfigure(i,weight=1)
+    space00 = tkinter.Label(purchaseSongs, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(purchaseSongs, text="PURCHASE")
+    windowTitle.config(font=("Helvetica",15,"bold"))
+    windowTitle.grid(row=1,column=1)
+    windowTitle2 = tkinter.Label(purchaseSongs, text="SONGS")
+    windowTitle2.config(font=("Helvetica",15,"bold"))
+    windowTitle2.grid(row=2,column=1)
+    Instruction1 = tkinter.Label(purchaseSongs,text="Song Name")
+    Instruction1.config(font=("Helvetica",13,"bold"))
+    Instruction1.grid(row=1,column=3)
+    purchaseSongName = tkinter.Entry(purchaseSongs, font="Helvetica 10")
+    purchaseSongName.grid(row=2,column=3)
+    space0 = tkinter.Label(purchaseSongs, text="").grid(row=3,column=3)
+    purchaseSongsBtn = tkinter.Button(purchaseSongs, text="Add Song to Shopping Cart", padx=15, pady=5, bg="#c8c8c8", command = lambda: addSongToWishlist(currentUser,wishlist))
+    purchaseSongsBtn.grid(row=4,column=2)
+    space1 = tkinter.Label(purchaseSongs, text="").grid(row=5,column=3)
+    purchaseSongsBtn = tkinter.Button(purchaseSongs, text="Proceed to Checkout", padx=15, pady=5, bg="#c8c8c8", command = lambda: checkoutView(currentUser,wishlist))
+    purchaseSongsBtn.grid(row=6,column=2)
+    space2 = tkinter.Label(purchaseSongs, text="").grid(row=7,column=3)
+    backModifyBtn = tkinter.Button(purchaseSongs, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn.grid(row=8,column=2)
+    purchaseSongs.mainloop()
+
+def checkoutView(currentUser,wishlist):
+    cur = con.cursor()
+    checkoutView = tkinter.Tk()
+    checkoutView.geometry("1000x550")
+    checkoutView.title("D")
+    for i in range(5):
+        checkoutView.columnconfigure(i,weight=1)
+    space00 = tkinter.Label(checkoutView, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(checkoutView, text="CHECKOUT")
+    windowTitle.config(font=("Helvetica",20,"bold"))
+    windowTitle.grid(row=1,column=1)
+    space0 = tkinter.Label(checkoutView, text="").grid(row=2,column=3)
+    subTitle0 = tkinter.Label(checkoutView, text="Number")
+    subTitle0.config(font=("Helvetica",15,"bold"))
+    subTitle0.grid(row=3,column=1)
+    subTitle = tkinter.Label(checkoutView, text="Song Name")
+    subTitle.config(font=("Helvetica",15,"bold"))
+    subTitle.grid(row=3,column=2)
+    subTitle2 = tkinter.Label(checkoutView, text="Price")
+    subTitle2.config(font=("Helvetica",15,"bold"))
+    subTitle2.grid(row=3,column=3)
+    x = 1
+    i = 4
+    totalprice = 0.00
+    for song in wishlist:
+        dictionary = {'Name':song}
+        cur.execute("""select name, unitprice from track where name = %(Name)s limit 1;""",dictionary)
+        rows = cur.fetchall()
+        for r in rows:
+            number = tkinter.Label(checkoutView, text=x)
+            number.config(font=("Helvetica",15))
+            number.grid(row=i,column=1)
+            songName = tkinter.Label(checkoutView, text=r[0])
+            songName.config(font=("Helvetica",15))
+            songName.grid(row=i,column=2)
+            price = tkinter.Label(checkoutView, text=r[1])
+            price.config(font=("Helvetica",15))
+            price.grid(row=i,column=3)
+            i += 1
+            x += 1
+            songprice = r[1]
+            songprice = float(songprice)
+            totalprice += songprice
+    space1 = tkinter.Label(checkoutView, text="").grid(row=i+1,column=2)
+    totalLabel = tkinter.Label(checkoutView, text="Total: ")
+    totalLabel.config(font=("Helvetica",15,"bold"))
+    totalLabel.grid(row=i+2,column=2)
+    totalPriceLabel = tkinter.Label(checkoutView, text=str(totalprice))
+    totalPriceLabel.config(font=("Helvetica",15,"bold"))
+    totalPriceLabel.grid(row=i+2,column=3)
+    space2 = tkinter.Label(checkoutView, text="").grid(row=i+3,column=2)
+    buySongsBtn = tkinter.Button(checkoutView, text="Buy Songs", padx=15, pady=5, bg="#c8c8c8", command = lambda: songPayment(currentUser,wishlist,totalprice))
+    buySongsBtn.grid(row=i+4,column=2)
+    space3 = tkinter.Label(checkoutView, text="").grid(row=i+5,column=2)
+    buySongsBtn = tkinter.Button(checkoutView, text="Cancel Payment", padx=15, pady=5, bg="#c8c8c8")
+    buySongsBtn.grid(row=i+6,column=2)
+    checkoutView.mainloop()
 
 ##################################################################################################################
                                                 #Programa
