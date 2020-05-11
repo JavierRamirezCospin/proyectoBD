@@ -621,6 +621,7 @@ def pdfGenerator(currentUser,songsList,totalprice):
     try:
         cur = con.cursor()
         client = currentUser['name']
+        length = len(songsList) + 1
         pdf = SimpleDocTemplate("PurchaseCertification-"+client+".pdf")
         flow_obj = []
         with open(client+'.csv') as f1:
@@ -642,7 +643,7 @@ def pdfGenerator(currentUser,songsList,totalprice):
         t = Table(tdata)
         tstyle = TableStyle([("GRID",(0,0),(-1,-1),1,colors.black),
                              ("BOX",(0,0),(-1,-5),1,colors.black),
-                             ("BACKGROUND",(0,0),(-1,-3),colors.grey)])
+                             ("BACKGROUND",(0,0),(-1,-length),colors.grey)])
         t.setStyle(tstyle)
         flow_obj.append(t)
         pdf.build(flow_obj)
