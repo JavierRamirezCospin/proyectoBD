@@ -17,6 +17,22 @@ def logOut(View,currentUser):
     currentUser = {}
     loginView(con)
 
+def backToLogin(View):
+    View.destroy()
+    loginView(con)
+
+def backToView(View,currentUser):
+    View.destroy()
+    userType = currentUser['type']
+    if userType == 'admin':
+        adminView(currentUser)     
+    elif userType == 'Tier 1':
+        customer1View(currentUser)
+    elif userType == 'Tier 2':
+        customer2View(currentUser)
+    elif userType == 'Tier 3':
+        customer3View(currentUser)
+
 def insertNewArtist(currentUser):
     try:
         cur = con.cursor()
@@ -497,136 +513,142 @@ def addSongToWishlist(currentUser,wishlist):
         print("\n-> No song with that name!")
 
 def songPayment(currentUser,wishlist,totalprice):
-    #try:
-    cur = con.cursor()
-    songsList = []
-    cur.execute("""select invoiceid from invoice order by invoiceid desc limit 1;""")
-    lastIDS = cur.fetchall()
-    lastID = 0
-    for lid in lastIDS:
-        lastID = lid[0]
-        lastID += 1
-    userName = currentUser['name']
-    userDictionary = {'Username':userName}
-    cur.execute("""select customerid, address, city, state, country, postalcode
-                from customer
-                where username = %(Username)s
-                LIMIT 1;""",userDictionary)
-    userCredential = cur.fetchall()
-    customerID = 0
-    customerAddress = ""
-    customerCity = ""
-    customerState = ""
-    customerCountry = ""
-    customerPostalCode = ""
-    price = totalprice
-    today = date.today()
-    for userCredential in userCredential:
-        customerID = userCredential[0]
-        customerAddress = userCredential[1]
-        customerCity = userCredential[2]
-        customerState = userCredential[3]
-        customerCountry = userCredential[4]
-        customerPostalCode = userCredential[5]
-    invoiceDictionary = {'InvoiceID':lastID,
-                       'CustomerID':customerID,
-                       'InvoiceDate':today,
-                       'BillingAddress':customerAddress,
-                       'BillingCity':customerCity,
-                       'BillingState':customerState,
-                       'BillingCountry':customerCountry,
-                       'BillingPostalCode':customerPostalCode,
-                       'UnitPrice':price}
-    cur.execute("""INSERT INTO invoice (invoiceid,customerid,invoicedate,billingaddress,billingcity,billingstate,billingcountry,billingpostalcode,total)
-               VALUES (%(InvoiceID)s,%(CustomerID)s,%(InvoiceDate)s,%(BillingAddress)s,%(BillingCity)s,%(BillingState)s,%(BillingCountry)s,%(BillingPostalCode)s,%(UnitPrice)s);""",invoiceDictionary)
-    con.commit()
-    for song in wishlist:
-        cur.execute("""select invoicelineid from invoiceline order by invoicelineid desc limit 1;""")
-        invoiceLIDS = cur.fetchall()
-        lastILID = 0
-        quantity = 1
-        for invoiceLID in invoiceLIDS:
-            lastILID = invoiceLID[0]
-            lastILID += 1
-        rightTrackID = 0
-        songName = song
-        songDictionary = {'SongName':songName}
-        cur.execute("""SELECT trackid
-                FROM track
-                where name = %(SongName)s
-                LIMIT 1""",songDictionary)
-        tracksIDs = cur.fetchall()
-        price = 0.99
-        quantity = 1
-        for trackID in tracksIDs:
-            rightTrackID = trackID[0]
-        invoicelineDictionary = {'InvoiceLineID':lastILID,
-                                'InvoiceID':lastID,
-                                'TrackID':rightTrackID,
-                                'UnitPrice':price,
-                                'Quantity':quantity}
-        cur.execute("""INSERT INTO invoiceline (invoicelineid,invoiceid,trackid,unitprice,quantity)
-                        VALUES (%(InvoiceLineID)s,%(InvoiceID)s,%(TrackID)s,%(UnitPrice)s,%(Quantity)s);""",invoicelineDictionary)
+    try:
+        cur = con.cursor()
+        songsList = []
+        cur.execute("""select invoiceid from invoice order by invoiceid desc limit 1;""")
+        lastIDS = cur.fetchall()
+        lastID = 0
+        for lid in lastIDS:
+            lastID = lid[0]
+            lastID += 1
+        userName = currentUser['name']
+        userDictionary = {'Username':userName}
+        cur.execute("""select customerid, address, city, state, country, postalcode
+                    from customer
+                    where username = %(Username)s
+                    LIMIT 1;""",userDictionary)
+        userCredential = cur.fetchall()
+        customerID = 0
+        customerAddress = ""
+        customerCity = ""
+        customerState = ""
+        customerCountry = ""
+        customerPostalCode = ""
+        price = totalprice
+        today = date.today()
+        for userCredential in userCredential:
+            customerID = userCredential[0]
+            customerAddress = userCredential[1]
+            customerCity = userCredential[2]
+            customerState = userCredential[3]
+            customerCountry = userCredential[4]
+            customerPostalCode = userCredential[5]
+        invoiceDictionary = {'InvoiceID':lastID,
+                           'CustomerID':customerID,
+                           'InvoiceDate':today,
+                           'BillingAddress':customerAddress,
+                           'BillingCity':customerCity,
+                           'BillingState':customerState,
+                           'BillingCountry':customerCountry,
+                           'BillingPostalCode':customerPostalCode,
+                           'UnitPrice':price}
+        cur.execute("""INSERT INTO invoice (invoiceid,customerid,invoicedate,billingaddress,billingcity,billingstate,billingcountry,billingpostalcode,total)
+                   VALUES (%(InvoiceID)s,%(CustomerID)s,%(InvoiceDate)s,%(BillingAddress)s,%(BillingCity)s,%(BillingState)s,%(BillingCountry)s,%(BillingPostalCode)s,%(UnitPrice)s);""",invoiceDictionary)
         con.commit()
-        songsList.append(invoicelineDictionary)
-    print("\n-> Songs Purchase Succesfully!")
-    csvGenerator(currentUser,songsList,totalprice)
-    print("\n-> CSV File Generated Succesfully!")
-    pdfGenerator(currentUser,songsList,totalprice)
-    print("\n-> PDF File Generated Succesfully!")
-    cur.close()
-    #except:
-        #print("\n-> Song purchase Failed!")
+        for song in wishlist:
+            cur.execute("""select invoicelineid from invoiceline order by invoicelineid desc limit 1;""")
+            invoiceLIDS = cur.fetchall()
+            lastILID = 0
+            quantity = 1
+            for invoiceLID in invoiceLIDS:
+                lastILID = invoiceLID[0]
+                lastILID += 1
+            rightTrackID = 0
+            songName = song
+            songDictionary = {'SongName':songName}
+            cur.execute("""SELECT trackid
+                    FROM track
+                    where name = %(SongName)s
+                    LIMIT 1""",songDictionary)
+            tracksIDs = cur.fetchall()
+            price = 0.99
+            quantity = 1
+            for trackID in tracksIDs:
+                rightTrackID = trackID[0]
+            invoicelineDictionary = {'InvoiceLineID':lastILID,
+                                    'InvoiceID':lastID,
+                                    'TrackID':rightTrackID,
+                                    'UnitPrice':price,
+                                    'Quantity':quantity}
+            cur.execute("""INSERT INTO invoiceline (invoicelineid,invoiceid,trackid,unitprice,quantity)
+                            VALUES (%(InvoiceLineID)s,%(InvoiceID)s,%(TrackID)s,%(UnitPrice)s,%(Quantity)s);""",invoicelineDictionary)
+            con.commit()
+            songsList.append(invoicelineDictionary)
+        print("\n-> Songs Purchase Succesfully!")
+        csvGenerator(currentUser,songsList,totalprice)
+        print("\n-> CSV File Generated Succesfully!")
+        pdfGenerator(currentUser,songsList,totalprice)
+        print("\n-> PDF File Generated Succesfully!")
+        cur.close()
+    except:
+        print("\n-> Song purchase Failed!")
 
 def csvGenerator(currentUser,songsList,totalprice):
-    cur = con.cursor()
-    client = currentUser['name']
-    with open(client+'.csv', 'w', newline='') as f:
-        fieldnames = ['invoiceLineID','invoiceID','TrackID','UnitPrice','Quantity']
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for song in songsList:
-            songILID = song['InvoiceLineID']
-            songIID = song['InvoiceID']
-            songID = song['TrackID']
-            songPrice = song['UnitPrice']
-            songQuantity = song['Quantity']
-            writer.writerow({'invoiceLineID':songILID,
-                             'invoiceID':songIID,
-                             'TrackID':songID,
-                             'UnitPrice':songPrice,
-                             'Quantity':songQuantity})
-    cur.close()
+    try:
+        cur = con.cursor()
+        client = currentUser['name']
+        with open(client+'.csv', 'w', newline='') as f:
+            fieldnames = ['invoiceLineID','invoiceID','TrackID','UnitPrice','Quantity']
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for song in songsList:
+                songILID = song['InvoiceLineID']
+                songIID = song['InvoiceID']
+                songID = song['TrackID']
+                songPrice = song['UnitPrice']
+                songQuantity = song['Quantity']
+                writer.writerow({'invoiceLineID':songILID,
+                                 'invoiceID':songIID,
+                                 'TrackID':songID,
+                                 'UnitPrice':songPrice,
+                                 'Quantity':songQuantity})
+        cur.close()
+    except:
+        print("\n-> CSV File Generation Failed!")
 
 def pdfGenerator(currentUser,songsList,totalprice):
-    cur = con.cursor()
-    client = currentUser['name']
-    pdf = SimpleDocTemplate("PurchaseCertification-"+client+".pdf")
-    flow_obj = []
-    with open(client+'.csv') as f1:
-        csvdata = csv.reader(f1,delimiter=",")
-        tdata = []
-        for row in csvdata:
-            data = []
-            songInvoiceLineID = row[0]
-            songInvoiceID = row[1]
-            songID = row[2]
-            songPrice = row[3]
-            songQuantity = row[4]
-            data.append(songInvoiceLineID)
-            data.append(songInvoiceID)
-            data.append(songID)
-            data.append(songPrice)
-            data.append(songQuantity)
-            tdata.append(data)
-    t = Table(tdata)
-    tstyle = TableStyle([("GRID",(0,0),(-1,-1),1,colors.black),
-                         ("BOX",(0,0),(-1,-5),1,colors.black),
-                         ("BACKGROUND",(0,0),(-1,-3),colors.grey)])
-    t.setStyle(tstyle)
-    flow_obj.append(t)
-    pdf.build(flow_obj)
-    cur.close()    
+    try:
+        cur = con.cursor()
+        client = currentUser['name']
+        pdf = SimpleDocTemplate("PurchaseCertification-"+client+".pdf")
+        flow_obj = []
+        with open(client+'.csv') as f1:
+            csvdata = csv.reader(f1,delimiter=",")
+            tdata = []
+            for row in csvdata:
+                data = []
+                songInvoiceLineID = row[0]
+                songInvoiceID = row[1]
+                songID = row[2]
+                songPrice = row[3]
+                songQuantity = row[4]
+                data.append(songInvoiceLineID)
+                data.append(songInvoiceID)
+                data.append(songID)
+                data.append(songPrice)
+                data.append(songQuantity)
+                tdata.append(data)
+        t = Table(tdata)
+        tstyle = TableStyle([("GRID",(0,0),(-1,-1),1,colors.black),
+                             ("BOX",(0,0),(-1,-5),1,colors.black),
+                             ("BACKGROUND",(0,0),(-1,-3),colors.grey)])
+        t.setStyle(tstyle)
+        flow_obj.append(t)
+        pdf.build(flow_obj)
+        cur.close()
+    except:
+        print("\n-> PDF File Generation Failed!")
     
 def registerUser(con):
     try:
@@ -709,7 +731,7 @@ def registerUser(con):
     except:
         print("\n->Registration failed!")
 
-def loginUser(con):
+def loginUser(window,con):
     try:
         message = "User not found"
         currentUser = {}
@@ -726,6 +748,7 @@ def loginUser(con):
                 currentUser['name'] = user
                 currentUser['type'] = 'admin' 
                 adminView(currentUser)
+                window.destroy()
                 
         cur.execute("""SELECT Username, password
                         FROM Customer""")
@@ -743,12 +766,15 @@ def loginUser(con):
                     if userType == 1:
                         currentUser['type'] = 'Tier 1'
                         customer1View(currentUser)
+                        window.destroy()
                     elif userType == 2:
                         currentUser['type'] = 'Tier 2'
                         customer2View(currentUser)
+                        window.destroy()
                     elif userType == 3:
                         currentUser['type'] = 'Tier 3'
                         customer3View(currentUser)
+                        window.destroy()
         cur.close()
     except:
         print("Login Failed")
@@ -757,9 +783,10 @@ def loginUser(con):
                                         #Vistas del sistema
 ##################################################################################################################
 
-def registerView():
+def registerView(View):
     global newuserEntry, newpasswordEntry, newFaxEntry, newFirstNameEntry, newLastNameEntry, newAddressEntry, newStateEntry, newCityEntry, newCountryEntry, newPostalEntry, newPhoneEntry, newEmailEntry, newCompanyEntry
     registerWindow = tkinter.Tk()
+    View.destroy()
     for i in range(7):
         registerWindow.columnconfigure(i,weight=1)
     registerWindow.geometry("850x950")
@@ -848,7 +875,7 @@ def registerView():
     loginBtn = tkinter.Button(registerWindow, text="REGISTER", padx=15, pady=5, command = lambda: registerUser(con))
     loginBtn.grid(row=27,column=3)
     space11 = tkinter.Label(registerWindow, text="").grid(row=28,column=3)
-    backBtn = tkinter.Button(registerWindow, text="BACK", padx=15, pady=5, command = lambda: loginView(con))
+    backBtn = tkinter.Button(registerWindow, text="BACK", padx=15, pady=5, command = lambda: backToLogin(registerWindow))
     backBtn.grid(row=29,column=3)
     registerWindow.mainloop()
 
@@ -885,7 +912,7 @@ def loginView(con):
     passwordEntry.pack()
     space5 = tkinter.Label(window, text="")
     space5.pack()
-    loginBtn = tkinter.Button(window, text="LOGIN", bg="#c8c8c8",padx=30, pady=10, command = lambda: loginUser(con))
+    loginBtn = tkinter.Button(window, text="LOGIN", bg="#c8c8c8",padx=30, pady=10, command = lambda: loginUser(window,con))
     loginBtn.pack()
     space6 = tkinter.Label(window, text="")
     space6.pack()
@@ -898,7 +925,7 @@ def loginView(con):
     Instructions2.pack()   
     space9 = tkinter.Label(window, text="")
     space9.pack()
-    loginBtn = tkinter.Button(window, text="REGISTER", bg="#c8c8c8", padx=30, pady=10, command=registerView)
+    loginBtn = tkinter.Button(window, text="REGISTER", bg="#c8c8c8", padx=30, pady=10, command = lambda: registerView(window))
     loginBtn.pack()
     window.mainloop()
 
@@ -916,32 +943,32 @@ def customer1View(currentUser):
     showUserType.grid(row=2,column=1)
     showUserType.config(font=("Helvetica", 20, "bold"))
     space0 = tkinter.Label(customer1View, text="").grid(row=3,column=1)
-    registerArtist = tkinter.Button(customer1View, text="Register New Artist", width=20, height=1, command = lambda: newArtistView(currentUser))
+    registerArtist = tkinter.Button(customer1View, text="Register New Artist", width=20, height=1, command = lambda: newArtistView(customer1View,currentUser))
     registerArtist.grid(row=4,column=1)
-    registerAlbum = tkinter.Button(customer1View, text="Register New Album", width=20, height=1, command = lambda: newAlbumView(currentUser))
+    registerAlbum = tkinter.Button(customer1View, text="Register New Album", width=20, height=1, command = lambda: newAlbumView(customer1View,currentUser))
     registerAlbum.grid(row=5,column=1)
-    registerSong = tkinter.Button(customer1View, text="Register New Song", width=20, height=1, command = lambda: newSongView(currentUser))
+    registerSong = tkinter.Button(customer1View, text="Register New Song", width=20, height=1, command = lambda: newSongView(customer1View,currentUser))
     registerSong.grid(row=6,column=1)
-    mostAlbums = tkinter.Button(customer1View, text="Artist with most Albums",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    mostAlbums = tkinter.Button(customer1View, text="Artist with most Albums",width=20,height=1, command = lambda: mostAlbumsView(customer1View,currentUser))
     mostAlbums.grid(row=4,column=2)
-    mostGenres = tkinter.Button(customer1View, text="Genres with most Songs",width=20,height=1, command = lambda: mostGenresView(currentUser))
+    mostGenres = tkinter.Button(customer1View, text="Genres with most Songs",width=20,height=1, command = lambda: mostGenresView(customer1View,currentUser))
     mostGenres.grid(row=5,column=2)
-    playlistDuration = tkinter.Button(customer1View, text="Playlist Duration",width=20,height=1, command = lambda: playlistDurationView(currentUser))
+    playlistDuration = tkinter.Button(customer1View, text="Playlist Duration",width=20,height=1, command = lambda: playlistDurationView(customer1View,currentUser))
     playlistDuration.grid(row=6,column=2)
-    longestSongs = tkinter.Button(customer1View, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(currentUser))
+    longestSongs = tkinter.Button(customer1View, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(customer1View,currentUser))
     longestSongs.grid(row=7,column=2)
-    usersSongs = tkinter.Button(customer1View, text="Users Songs",width=20,height=1, command = lambda: mostUsersUploadsView(currentUser))
+    usersSongs = tkinter.Button(customer1View, text="Users Songs",width=20,height=1, command = lambda: mostUsersUploadsView(customer1View,currentUser))
     usersSongs.grid(row=8,column=2)
-    averageGenre = tkinter.Button(customer1View, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(currentUser))
+    averageGenre = tkinter.Button(customer1View, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(customer1View,currentUser))
     averageGenre.grid(row=9,column=2)
-    playlistArtists = tkinter.Button(customer1View, text="Playlist Artists",width=20,height=1, command = lambda: playlistArtistsView(currentUser))
+    playlistArtists = tkinter.Button(customer1View, text="Playlist Artists",width=20,height=1, command = lambda: playlistArtistsView(customer1View,currentUser))
     playlistArtists.grid(row=10,column=2)
-    diverseArtists = tkinter.Button(customer1View, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(currentUser))
+    diverseArtists = tkinter.Button(customer1View, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(customer1View,currentUser))
     diverseArtists.grid(row=11,column=2)
-    listenSongs = tkinter.Button(customer1View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsCustomerView(currentUser))
+    listenSongs = tkinter.Button(customer1View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsCustomerView(customer1View,currentUser))
     listenSongs.grid(row=4,column=3)
     space4 = tkinter.Label(customer1View, text="").grid(row=5,column=3)
-    purchaseSongs = tkinter.Button(customer1View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(currentUser))
+    purchaseSongs = tkinter.Button(customer1View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(customer1View,currentUser))
     purchaseSongs.grid(row=6,column=3)
     space1 = tkinter.Label(customer1View, text="").grid(row=7,column=1)
     space2 = tkinter.Label(customer1View, text="").grid(row=8,column=1)
@@ -971,38 +998,38 @@ def customer2View(currentUser):
     showUserType.grid(row=2,column=1)
     showUserType.config(font=("Helvetica", 20, "bold"))
     space0 = tkinter.Label(customer2View, text="").grid(row=3,column=1)
-    registerArtist = tkinter.Button(customer2View, text="Register New Artist", width=20, height=1, command = lambda: newArtistView(currentUser))
+    registerArtist = tkinter.Button(customer2View, text="Register New Artist", width=20, height=1, command = lambda: newArtistView(customer2View,currentUser))
     registerArtist.grid(row=4,column=1)
-    registerAlbum = tkinter.Button(customer2View, text="Register New Album", width=20, height=1, command = lambda: newAlbumView(currentUser))
+    registerAlbum = tkinter.Button(customer2View, text="Register New Album", width=20, height=1, command = lambda: newAlbumView(customer2View,currentUser))
     registerAlbum.grid(row=5,column=1)
-    registerSong = tkinter.Button(customer2View, text="Register New Song", width=20, height=1, command = lambda: newSongView(currentUser))
+    registerSong = tkinter.Button(customer2View, text="Register New Song", width=20, height=1, command = lambda: newSongView(customer2View,currentUser))
     registerSong.grid(row=6,column=1)
-    modifyArtist = tkinter.Button(customer2View, text="Modify Artist", width=20, height=1, command = lambda: modifyArtistView(currentUser))
+    modifyArtist = tkinter.Button(customer2View, text="Modify Artist", width=20, height=1, command = lambda: modifyArtistView(customer2View,currentUser))
     modifyArtist.grid(row=7,column=1)
-    modifyAlbum = tkinter.Button(customer2View, text="Modify Album", width=20, height=1, command = lambda: modifyAlbumView(currentUser))
+    modifyAlbum = tkinter.Button(customer2View, text="Modify Album", width=20, height=1, command = lambda: modifyAlbumView(customer2View,currentUser))
     modifyAlbum.grid(row=8,column=1)
-    modifySong = tkinter.Button(customer2View, text="Modify Song", width=20, height=1, command = lambda: modifySongView(currentUser))
+    modifySong = tkinter.Button(customer2View, text="Modify Song", width=20, height=1, command = lambda: modifySongView(customer2View,currentUser))
     modifySong.grid(row=9,column=1)
-    mostAlbums = tkinter.Button(customer2View, text="Artist with most Albums",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    mostAlbums = tkinter.Button(customer2View, text="Artist with most Albums",width=20,height=1, command = lambda: mostAlbumsView(customer2View,currentUser))
     mostAlbums.grid(row=4,column=2)
-    mostGenres = tkinter.Button(customer2View, text="Genres with most Songs",width=20,height=1, command = lambda: mostGenresView(currentUser))
+    mostGenres = tkinter.Button(customer2View, text="Genres with most Songs",width=20,height=1, command = lambda: mostGenresView(customer2View,currentUser))
     mostGenres.grid(row=5,column=2)
-    playlistDuration = tkinter.Button(customer2View, text="Playlist Duration",width=20,height=1, command = lambda: playlistDurationView(currentUser))
+    playlistDuration = tkinter.Button(customer2View, text="Playlist Duration",width=20,height=1, command = lambda: playlistDurationView(customer2View,currentUser))
     playlistDuration.grid(row=6,column=2)
-    longestSongs = tkinter.Button(customer2View, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(currentUser))
+    longestSongs = tkinter.Button(customer2View, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(customer2View,currentUser))
     longestSongs.grid(row=7,column=2)
-    usersSongs = tkinter.Button(customer2View, text="Users Songs",width=20,height=1, command = lambda: mostUsersUploadsView(currentUser))
+    usersSongs = tkinter.Button(customer2View, text="Users Songs",width=20,height=1, command = lambda: mostUsersUploadsView(customer2View,currentUser))
     usersSongs.grid(row=8,column=2)
-    averageGenre = tkinter.Button(customer2View, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(currentUser))
+    averageGenre = tkinter.Button(customer2View, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(customer2View,currentUser))
     averageGenre.grid(row=9,column=2)
-    playlistArtists = tkinter.Button(customer2View, text="Playlist Artists",width=20,height=1, command = lambda: playlistArtistsView(currentUser))
+    playlistArtists = tkinter.Button(customer2View, text="Playlist Artists",width=20,height=1, command = lambda: playlistArtistsView(customer2View,currentUser))
     playlistArtists.grid(row=10,column=2)
-    diverseArtists = tkinter.Button(customer2View, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(currentUser))
+    diverseArtists = tkinter.Button(customer2View, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(customer2View,currentUser))
     diverseArtists.grid(row=11,column=2)
-    listenSongs = tkinter.Button(customer2View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsCustomerView(currentUser))
+    listenSongs = tkinter.Button(customer2View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsCustomerView(customer2View,currentUser))
     listenSongs.grid(row=4,column=3)
     space4 = tkinter.Label(customer2View, text="").grid(row=5,column=3)
-    purchaseSongs = tkinter.Button(customer2View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(currentUser))
+    purchaseSongs = tkinter.Button(customer2View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(customer2View,currentUser))
     purchaseSongs.grid(row=6,column=3)
     space0 = tkinter.Label(customer2View, text="").grid(row=10,column=1)
     space0 = tkinter.Label(customer2View, text="").grid(row=11,column=1)
@@ -1030,42 +1057,42 @@ def customer3View(currentUser):
     showUserType.grid(row=2,column=1)
     showUserType.config(font=("Helvetica", 20, "bold"))
     space0 = tkinter.Label(customer3View, text="").grid(row=3,column=1)
-    registerArtist = tkinter.Button(customer3View, text="Register New Artist", width=20, height=1, command = lambda: newArtistView(currentUser))
+    registerArtist = tkinter.Button(customer3View, text="Register New Artist", width=20, height=1, command = lambda: newArtistView(customer3View,currentUser))
     registerArtist.grid(row=4,column=1)
-    registerAlbum = tkinter.Button(customer3View, text="Register New Album", width=20, height=1, command = lambda: newAlbumView(currentUser))
+    registerAlbum = tkinter.Button(customer3View, text="Register New Album", width=20, height=1, command = lambda: newAlbumView(customer3View,currentUser))
     registerAlbum.grid(row=5,column=1)
-    registerSong = tkinter.Button(customer3View, text="Register New Song", width=20, height=1, command = lambda: newSongView(currentUser))
+    registerSong = tkinter.Button(customer3View, text="Register New Song", width=20, height=1, command = lambda: newSongView(customer3View,currentUser))
     registerSong.grid(row=6,column=1)
-    modifyArtist = tkinter.Button(customer3View, text="Modify Artist", width=20, height=1, command = lambda: modifyArtistView(currentUser))
+    modifyArtist = tkinter.Button(customer3View, text="Modify Artist", width=20, height=1, command = lambda: modifyArtistView(customer3View,currentUser))
     modifyArtist.grid(row=7,column=1)
-    modifyAlbum = tkinter.Button(customer3View, text="Modify Album", width=20, height=1, command = lambda: modifyAlbumView(currentUser))
+    modifyAlbum = tkinter.Button(customer3View, text="Modify Album", width=20, height=1, command = lambda: modifyAlbumView(customer3View,currentUser))
     modifyAlbum.grid(row=8,column=1)
-    modifySong = tkinter.Button(customer3View, text="Modify Song", width=20, height=1, command = lambda: modifySongView(currentUser))
+    modifySong = tkinter.Button(customer3View, text="Modify Song", width=20, height=1, command = lambda: modifySongView(customer3View,currentUser))
     modifySong.grid(row=9,column=1)
-    deactivateSong = tkinter.Button(customer3View, text="Deactivate Song", width=20, height=1, command = lambda: deactivateSongView(currentUser))
+    deactivateSong = tkinter.Button(customer3View, text="Deactivate Song", width=20, height=1, command = lambda: deactivateSongView(customer3View,currentUser))
     deactivateSong.grid(row=13,column=1)
-    activateSong = tkinter.Button(customer3View, text="Activate Song", width=20, height=1, command = lambda: activateSongView(currentUser))
+    activateSong = tkinter.Button(customer3View, text="Activate Song", width=20, height=1, command = lambda: activateSongView(customer3View,currentUser))
     activateSong.grid(row=14,column=1)
-    mostAlbums = tkinter.Button(customer3View, text="Artist with most Albums",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    mostAlbums = tkinter.Button(customer3View, text="Artist with most Albums",width=20,height=1, command = lambda: mostAlbumsView(customer3View,currentUser))
     mostAlbums.grid(row=4,column=2)
-    mostGenres = tkinter.Button(customer3View, text="Genres with most Songs",width=20,height=1, command = lambda: mostGenresView(currentUser))
+    mostGenres = tkinter.Button(customer3View, text="Genres with most Songs",width=20,height=1, command = lambda: mostGenresView(customer3View,currentUser))
     mostGenres.grid(row=5,column=2)
-    playlistDuration = tkinter.Button(customer3View, text="Playlist Duration",width=20,height=1, command = lambda: playlistDurationView(currentUser))
+    playlistDuration = tkinter.Button(customer3View, text="Playlist Duration",width=20,height=1, command = lambda: playlistDurationView(customer3View,currentUser))
     playlistDuration.grid(row=6,column=2)
-    longestSongs = tkinter.Button(customer3View, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(currentUser))
+    longestSongs = tkinter.Button(customer3View, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(customer3View,currentUser))
     longestSongs.grid(row=7,column=2)
-    usersSongs = tkinter.Button(customer3View, text="Users Songs",width=20,height=1, command = lambda: mostUsersUploadsView(currentUser))
+    usersSongs = tkinter.Button(customer3View, text="Users Songs",width=20,height=1, command = lambda: mostUsersUploadsView(customer3View,currentUser))
     usersSongs.grid(row=8,column=2)
-    averageGenre = tkinter.Button(customer3View, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(currentUser))
+    averageGenre = tkinter.Button(customer3View, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(customer3View,currentUser))
     averageGenre.grid(row=9,column=2)
-    playlistArtists = tkinter.Button(customer3View, text="Playlist Artists",width=20,height=1, command = lambda: playlistArtistsView(currentUser))
+    playlistArtists = tkinter.Button(customer3View, text="Playlist Artists",width=20,height=1, command = lambda: playlistArtistsView(customer3View,currentUser))
     playlistArtists.grid(row=10,column=2)
-    diverseArtists = tkinter.Button(customer3View, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(currentUser))
+    diverseArtists = tkinter.Button(customer3View, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(customer3View,currentUser))
     diverseArtists.grid(row=11,column=2)
-    listenSongs = tkinter.Button(customer3View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsCustomerView(currentUser))
+    listenSongs = tkinter.Button(customer3View, text="Listen Songs",width=20,height=1, command = lambda: listenSongsCustomerView(customer3View,currentUser))
     listenSongs.grid(row=4,column=3)
     space4 = tkinter.Label(customer3View, text="").grid(row=5,column=3)
-    purchaseSongs = tkinter.Button(customer3View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(currentUser))
+    purchaseSongs = tkinter.Button(customer3View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(customer3View,currentUser))
     purchaseSongs.grid(row=6,column=3)
     space0 = tkinter.Label(customer3View, text="").grid(row=15,column=1)
     space0 = tkinter.Label(customer3View, text="").grid(row=16,column=1)
@@ -1088,66 +1115,67 @@ def adminView(currentUser):
     showUserType.grid(row=2,column=1)
     showUserType.config(font=("Helvetica", 20, "bold"))
     space0 = tkinter.Label(adminWindow, text="").grid(row=3,column=1)
-    registerArtist = tkinter.Button(adminWindow, text="Register New Artist", width=20, height=1, command = lambda: newArtistView(currentUser))
+    registerArtist = tkinter.Button(adminWindow, text="Register New Artist", width=20, height=1, command = lambda: newArtistView(adminWindow,currentUser))
     registerArtist.grid(row=4,column=1)
-    registerAlbum = tkinter.Button(adminWindow, text="Register New Album", width=20, height=1, command = lambda: newAlbumView(currentUser))
+    registerAlbum = tkinter.Button(adminWindow, text="Register New Album", width=20, height=1, command = lambda: newAlbumView(adminWindow,currentUser))
     registerAlbum.grid(row=5,column=1)
-    registerSong = tkinter.Button(adminWindow, text="Register New Song", width=20, height=1, command = lambda: newSongView(currentUser))
+    registerSong = tkinter.Button(adminWindow, text="Register New Song", width=20, height=1, command = lambda: newSongView(adminWindow,currentUser))
     registerSong.grid(row=6,column=1)
-    modifyArtist = tkinter.Button(adminWindow, text="Modify Artist", width=20, height=1, command = lambda: modifyArtistView(currentUser))
+    modifyArtist = tkinter.Button(adminWindow, text="Modify Artist", width=20, height=1, command = lambda: modifyArtistView(adminWindow,currentUser))
     modifyArtist.grid(row=7,column=1)
-    modifyAlbum = tkinter.Button(adminWindow, text="Modify Album", width=20, height=1, command = lambda: modifyAlbumView(currentUser))
+    modifyAlbum = tkinter.Button(adminWindow, text="Modify Album", width=20, height=1, command = lambda: modifyAlbumView(adminWindow,currentUser))
     modifyAlbum.grid(row=8,column=1)
-    modifySong = tkinter.Button(adminWindow, text="Modify Song", width=20, height=1, command = lambda: modifySongView(currentUser))
+    modifySong = tkinter.Button(adminWindow, text="Modify Song", width=20, height=1, command = lambda: modifySongView(adminWindow,currentUser))
     modifySong.grid(row=9,column=1)
-    removeArtist = tkinter.Button(adminWindow, text="Remove Artist", width=20, height=1, command = lambda: removeArtistView(currentUser))
+    removeArtist = tkinter.Button(adminWindow, text="Remove Artist", width=20, height=1, command = lambda: removeArtistView(adminWindow,currentUser))
     removeArtist.grid(row=10,column=1)
-    removeAlbum = tkinter.Button(adminWindow, text="Remove Album", width=20, height=1, command = lambda: removeAlbumView(currentUser))
+    removeAlbum = tkinter.Button(adminWindow, text="Remove Album", width=20, height=1, command = lambda: removeAlbumView(adminWindow,currentUser))
     removeAlbum.grid(row=11,column=1)
-    removeSong = tkinter.Button(adminWindow, text="Remove Song", width=20, height=1, command = lambda: removeSongView(currentUser))
+    removeSong = tkinter.Button(adminWindow, text="Remove Song", width=20, height=1, command = lambda: removeSongView(adminWindow,currentUser))
     removeSong.grid(row=12,column=1)
-    deactivateSong = tkinter.Button(adminWindow, text="Deactivate Song", width=20, height=1, command = lambda: deactivateSongView(currentUser))
+    deactivateSong = tkinter.Button(adminWindow, text="Deactivate Song", width=20, height=1, command = lambda: deactivateSongView(adminWindow,currentUser))
     deactivateSong.grid(row=13,column=1)
-    activateSong = tkinter.Button(adminWindow, text="Activate Song", width=20, height=1, command = lambda: activateSongView(currentUser))
+    activateSong = tkinter.Button(adminWindow, text="Activate Song", width=20, height=1, command = lambda: activateSongView(adminWindow,currentUser))
     activateSong.grid(row=14,column=1)
-    manageUsers = tkinter.Button(adminWindow, text="Change User permission", width=20, height=1, command = lambda: userPermissionView(currentUser))
+    manageUsers = tkinter.Button(adminWindow, text="Change User permission", width=20, height=1, command = lambda: userPermissionView(adminWindow,currentUser))
     manageUsers.grid(row=15,column=1)
     space2 = tkinter.Label(adminWindow, text="").grid(row=16,column=1)
     space3 = tkinter.Label(adminWindow, text="").grid(row=17,column=1)
-    mostAlbums = tkinter.Button(adminWindow, text="Artist with most Albums",width=20,height=1, command = lambda: mostAlbumsView(currentUser))
+    mostAlbums = tkinter.Button(adminWindow, text="Artist with most Albums",width=20,height=1, command = lambda: mostAlbumsView(adminWindow,currentUser))
     mostAlbums.grid(row=4,column=2)
-    mostGenres = tkinter.Button(adminWindow, text="Genres with most Songs",width=20,height=1, command = lambda: mostGenresView(currentUser))
+    mostGenres = tkinter.Button(adminWindow, text="Genres with most Songs",width=20,height=1, command = lambda: mostGenresView(adminWindow,currentUser))
     mostGenres.grid(row=5,column=2)
-    playlistDuration = tkinter.Button(adminWindow, text="Playlist Duration",width=20,height=1, command = lambda: playlistDurationView(currentUser))
+    playlistDuration = tkinter.Button(adminWindow, text="Playlist Duration",width=20,height=1, command = lambda: playlistDurationView(adminWindow,currentUser))
     playlistDuration.grid(row=6,column=2)
-    longestSongs = tkinter.Button(adminWindow, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(currentUser))
+    longestSongs = tkinter.Button(adminWindow, text="Longest Songs",width=20,height=1, command = lambda: longestSongsView(adminWindow,currentUser))
     longestSongs.grid(row=7,column=2)
-    usersSongs = tkinter.Button(adminWindow, text="Users Songs",width=20,height=1, command = lambda: mostUsersUploadsView(currentUser))
+    usersSongs = tkinter.Button(adminWindow, text="Users Songs",width=20,height=1, command = lambda: mostUsersUploadsView(adminWindow,currentUser))
     usersSongs.grid(row=8,column=2)
-    averageGenre = tkinter.Button(adminWindow, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(currentUser))
+    averageGenre = tkinter.Button(adminWindow, text="Average Genre Length",width=20,height=1, command = lambda: averageGDView(adminWindow,currentUser))
     averageGenre.grid(row=9,column=2)
-    playlistArtists = tkinter.Button(adminWindow, text="Playlist Artists",width=20,height=1, command = lambda: playlistArtistsView(currentUser))
+    playlistArtists = tkinter.Button(adminWindow, text="Playlist Artists",width=20,height=1, command = lambda: playlistArtistsView(adminWindow,currentUser))
     playlistArtists.grid(row=10,column=2)
-    diverseArtists = tkinter.Button(adminWindow, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(currentUser))
+    diverseArtists = tkinter.Button(adminWindow, text="Diverse Artists",width=20,height=1, command = lambda: diverseArtistsView(adminWindow,currentUser))
     diverseArtists.grid(row=11,column=2)
-    listenSongs = tkinter.Button(adminWindow, text="Listen Songs",width=20,height=1, command = lambda: listenSongsAdminView(currentUser))
+    listenSongs = tkinter.Button(adminWindow, text="Listen Songs",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
     listenSongs.grid(row=4,column=3)
     space4 = tkinter.Label(adminWindow, text="").grid(row=5,column=3)
-    purchaseSongs = tkinter.Button(adminWindow, text="Purchase Songs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    purchaseSongs = tkinter.Button(adminWindow, text="Purchase Songs",width=20,height=1, command = lambda: listenSongsView(adminWindow,currentUser))
     purchaseSongs.grid(row=6,column=3)
     space5 = tkinter.Label(adminWindow, text="").grid(row=7,column=3)
-    trackLogs = tkinter.Button(adminWindow, text="Song Logs",width=20,height=1, command = lambda: listenSongsView(currentUser))
+    trackLogs = tkinter.Button(adminWindow, text="Song Logs",width=20,height=1, command = lambda: listenSongsView(adminWindow,currentUser))
     trackLogs.grid(row=8,column=3)
     space6 = tkinter.Label(adminWindow, text="").grid(row=9,column=3)
-    purchaseSimulator = tkinter.Button(adminWindow, text="Purchase Simulator",width=20,height=1, command = lambda: listenSongsAdminView(currentUser))
+    purchaseSimulator = tkinter.Button(adminWindow, text="Purchase Simulator",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
     purchaseSimulator.grid(row=10,column=3)
     logoutBtn = tkinter.Button(adminWindow, text="LOGOUT", width=20, height=1, bg="#ff9999", command = lambda: logOut(adminWindow,currentUser))
     logoutBtn.grid(row=18,column=1)
     adminWindow.mainloop()
 
-def newArtistView(currentUser):
+def newArtistView(View,currentUser):
     global newArtistName
     newArtistWindow = tkinter.Tk()
+    View.destroy()
     newArtistWindow.geometry("650x400")
     newArtistWindow.title("Enter New Artist")
     space00 = tkinter.Label(newArtistWindow, text="")
@@ -1168,13 +1196,14 @@ def newArtistView(currentUser):
     enterArtistBtn.pack()
     space2 = tkinter.Label(newArtistWindow, text="")
     space2.pack()
-    backArtistBtn = tkinter.Button(newArtistWindow,text="Back",bg="#c8c8c8",padx=20,pady=10)
+    backArtistBtn = tkinter.Button(newArtistWindow,text="Back",bg="#c8c8c8",padx=20,pady=10, command = lambda: backToView(newArtistWindow,currentUser))
     backArtistBtn.pack()
     newArtistWindow.mainloop()
 
-def newAlbumView(currentUser):
+def newAlbumView(View,currentUser):
     global albumTitle, albumArtistName
     newAlbumWindow = tkinter.Tk()
+    View.destroy()
     newAlbumWindow.geometry("650x550")
     newAlbumWindow.title("Enter New Album")
     space00 = tkinter.Label(newAlbumWindow, text="")
@@ -1202,13 +1231,14 @@ def newAlbumView(currentUser):
     enterAlbumBtn.pack()
     space3 = tkinter.Label(newAlbumWindow, text="")
     space3.pack()
-    backAlbumBtn = tkinter.Button(newAlbumWindow,text="Back",bg="#c8c8c8",padx=20,pady=10)
+    backAlbumBtn = tkinter.Button(newAlbumWindow,text="Back",bg="#c8c8c8",padx=20,pady=10, command = lambda: backToView(newAlbumWindow,currentUser))
     backAlbumBtn.pack()
     newAlbumWindow.mainloop()
 
-def newSongView(currentUser):
+def newSongView(View,currentUser):
     global newSongTitle, newSongAlbumName, newSongMediaType, newSongGenre, newSongComposer, newSongMilliseconds, newSongBytes, newSongPrice, newSongURL
     newSongWindow = tkinter.Tk()
+    View.destroy()
     newSongWindow.geometry("650x950")
     newSongWindow.title("Enter New Song")
     space00 = tkinter.Label(newSongWindow, text="")
@@ -1285,13 +1315,14 @@ def newSongView(currentUser):
     enterArtistBtn.pack()
     space10 = tkinter.Label(newSongWindow, text="")
     space10.pack()
-    backSongBtn = tkinter.Button(newSongWindow,text="Back",bg="#c8c8c8",padx=20,pady=6)
+    backSongBtn = tkinter.Button(newSongWindow,text="Back",bg="#c8c8c8",padx=20,pady=6, command = lambda: backToView(newSongWindow,currentUser))
     backSongBtn.pack()
     newSongWindow.mainloop()
 
-def modifyArtistView(currentUser):
+def modifyArtistView(View,currentUser):
     global oldArtistName, upArtistName
     mdArtistWindow = tkinter.Tk()
+    View.destroy()
     for i in range(7):
         mdArtistWindow.columnconfigure(i,weight=1)
     mdArtistWindow.geometry("850x400")
@@ -1315,13 +1346,14 @@ def modifyArtistView(currentUser):
     updateArtistBtn = tkinter.Button(mdArtistWindow, text="Update Artist", padx=15, pady=5, bg="#c8c8c8", command = lambda: modifyArtist(currentUser))
     updateArtistBtn.grid(row=9,column=3)
     space3 = tkinter.Label(mdArtistWindow, text="").grid(row=10,column=3)
-    backModifyBtn = tkinter.Button(mdArtistWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: loginView(currentUser))
+    backModifyBtn = tkinter.Button(mdArtistWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(mdArtistWindow,currentUser))
     backModifyBtn.grid(row=11,column=3)
     mdArtistWindow.mainloop()
 
-def modifyAlbumView(currentUser):
+def modifyAlbumView(View,currentUser):
     global oldAlbumName, upAlbumName, upAlbumArtist
     mdAlbumWindow = tkinter.Tk()
+    View.destroy()
     for i in range(7):
         mdAlbumWindow.columnconfigure(i,weight=1)
     mdAlbumWindow.geometry("850x500")
@@ -1351,13 +1383,14 @@ def modifyAlbumView(currentUser):
     updateAlbumBtn = tkinter.Button(mdAlbumWindow, text="Update Album", padx=15, pady=5, bg="#c8c8c8", command = lambda: modifyAlbum(currentUser))
     updateAlbumBtn.grid(row=12,column=3)
     space3 = tkinter.Label(mdAlbumWindow, text="").grid(row=13,column=3)
-    backModifyBtn = tkinter.Button(mdAlbumWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: loginView(con))
+    backModifyBtn = tkinter.Button(mdAlbumWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(mdAlbumWindow,currentUser))
     backModifyBtn.grid(row=14,column=3)
     mdAlbumWindow.mainloop()
 
-def modifySongView(currentUser):
+def modifySongView(View,currentUser):
     global oldSongName, upSongName, upSongAlbum, upSongMediaType, upSongGenre, upSongComposer, upSongMilliseconds, upSongBytes, upSongURL, upSongPrice
     mdSongWindow = tkinter.Tk()
+    View.destroy()
     for i in range(7):
         mdSongWindow.columnconfigure(i,weight=1)
     mdSongWindow.geometry("850x950")
@@ -1429,13 +1462,14 @@ def modifySongView(currentUser):
     updateSongBtn = tkinter.Button(mdSongWindow, text="Update Song", padx=15, pady=5, bg="#c8c8c8", command = lambda: modifySong(currentUser))
     updateSongBtn.grid(row=33,column=3)
     space3 = tkinter.Label(mdSongWindow, text="").grid(row=34,column=3)
-    backModifyBtn = tkinter.Button(mdSongWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: loginView(con))
+    backModifyBtn = tkinter.Button(mdSongWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(mdSongWindow,currentUser))
     backModifyBtn.grid(row=35,column=3)
     mdSongWindow.mainloop()
 
-def removeArtistView(currentUser):
+def removeArtistView(View,currentUser):
     global removeArtistName
     removeArtistWindow = tkinter.Tk()
+    View.destroy()
     removeArtistWindow.geometry("650x400")
     removeArtistWindow.title("Remove Artist")
     space00 = tkinter.Label(removeArtistWindow, text="")
@@ -1456,14 +1490,15 @@ def removeArtistView(currentUser):
     removeArtistBtn.pack()
     space2 = tkinter.Label(removeArtistWindow, text="")
     space2.pack()
-    backArtistBtn = tkinter.Button(removeArtistWindow,text="Back",bg="#c8c8c8",padx=20,pady=10)
+    backArtistBtn = tkinter.Button(removeArtistWindow,text="Back",bg="#c8c8c8",padx=20,pady=10, command = lambda: backToView(removeArtistWindow,currentUser))
     backArtistBtn.pack()
     removeArtistWindow.mainloop()
     removeArtistWindow.mainloop()
 
-def removeAlbumView(currentUser):
+def removeAlbumView(View,currentUser):
     global rmalbumTitle, rmalbumArtistName
     removeAlbumWindow = tkinter.Tk()
+    View.destroy()
     removeAlbumWindow.geometry("650x550")
     removeAlbumWindow.title("Remove Album")
     space00 = tkinter.Label(removeAlbumWindow, text="")
@@ -1491,13 +1526,14 @@ def removeAlbumView(currentUser):
     removeAlbumBtn.pack()
     space3 = tkinter.Label(removeAlbumWindow, text="")
     space3.pack()
-    backAlbumBtn = tkinter.Button(removeAlbumWindow,text="Back",bg="#c8c8c8",padx=20,pady=10)
+    backAlbumBtn = tkinter.Button(removeAlbumWindow,text="Back",bg="#c8c8c8",padx=20,pady=10, command = lambda: backToView(removeAlbumWindow,currentUser))
     backAlbumBtn.pack()
     removeAlbumWindow.mainloop()
 
-def removeSongView(currentUser):
+def removeSongView(View,currentUser):
     global rmsgSongTitle, rmsgComposer
     removeSongWindow = tkinter.Tk()
+    View.destroy()
     removeSongWindow.geometry("650x600")
     removeSongWindow.title("Remove Song")
     space00 = tkinter.Label(removeSongWindow, text="")
@@ -1532,13 +1568,14 @@ def removeSongView(currentUser):
     removeSongBtn.pack()
     space3 = tkinter.Label(removeSongWindow, text="")
     space3.pack()
-    backRemoveSongBtn = tkinter.Button(removeSongWindow,text="Back",bg="#c8c8c8",padx=20,pady=10)
+    backRemoveSongBtn = tkinter.Button(removeSongWindow,text="Back",bg="#c8c8c8",padx=20,pady=10, command = lambda: backToView(removeSongWindow,currentUser))
     backRemoveSongBtn.pack()
     removeSongWindow.mainloop()
 
-def deactivateSongView(currentUser):
+def deactivateSongView(View,currentUser):
     global deactivateSongTitle, deactivateSongComposer
     deactivateWindow = tkinter.Tk()
+    View.destroy()
     deactivateWindow.geometry("650x550")
     deactivateWindow.title("Deactivate Song")
     space00 = tkinter.Label(deactivateWindow, text="")
@@ -1566,13 +1603,14 @@ def deactivateSongView(currentUser):
     deactivateSongBtn.pack()
     space3 = tkinter.Label(deactivateWindow, text="")
     space3.pack()
-    backDeactivateBtn = tkinter.Button(deactivateWindow,text="Back",bg="#c8c8c8",padx=20,pady=10)
+    backDeactivateBtn = tkinter.Button(deactivateWindow,text="Back",bg="#c8c8c8",padx=20,pady=10, command = lambda: backToView(deactivateWindow,currentUser))
     backDeactivateBtn.pack()
     deactivateWindow.mainloop()
 
-def activateSongView(currentUser):
+def activateSongView(View,currentUser):
     global activateSongTitle, activateSongComposer
     activateWindow = tkinter.Tk()
+    View.destroy()
     activateWindow.geometry("650x550")
     activateWindow.title("Activate Song")
     space00 = tkinter.Label(activateWindow, text="")
@@ -1600,13 +1638,14 @@ def activateSongView(currentUser):
     activateSongBtn.pack()
     space3 = tkinter.Label(activateWindow, text="")
     space3.pack()
-    backActivateBtn = tkinter.Button(activateWindow,text="Back",bg="#c8c8c8",padx=20,pady=10)
+    backActivateBtn = tkinter.Button(activateWindow,text="Back",bg="#c8c8c8",padx=20,pady=10, command = lambda: backToView(activateWindow,currentUser))
     backActivateBtn.pack()
     activateWindow.mainloop()
 
-def userPermissionView(currentUser):
+def userPermissionView(View,currentUser):
     global permissionUsername, permissionNewNumber
     permissionWindow = tkinter.Tk()
+    View.destroy()
     permissionWindow.geometry("650x700")
     permissionWindow.title("Permissions Manager")
     space00 = tkinter.Label(permissionWindow, text="")
@@ -1648,13 +1687,14 @@ def userPermissionView(currentUser):
     changePermissionBtn.pack()
     space3 = tkinter.Label(permissionWindow, text="")
     space3.pack()
-    backPermissionBtn = tkinter.Button(permissionWindow,text="Back",bg="#c8c8c8",padx=20,pady=10)
+    backPermissionBtn = tkinter.Button(permissionWindow,text="Back",bg="#c8c8c8",padx=20,pady=10, command = lambda: backToView(permissionWindow,currentUser))
     backPermissionBtn.pack()
     permissionWindow.mainloop()
 
-def mostAlbumsView(currentUser):
+def mostAlbumsView(View,currentUser):
     cur = con.cursor()
     mostAlbumsView = tkinter.Tk()
+    View.destroy()
     mostAlbumsView.geometry("1000x500")
     for i in range(5):
         mostAlbumsView.columnconfigure(i,weight=1)
@@ -1697,13 +1737,14 @@ def mostAlbumsView(currentUser):
         x += 1
     space1 = tkinter.Label(mostAlbumsView, text="").grid(row=9,column=3)
     space2 = tkinter.Label(mostAlbumsView, text="").grid(row=10,column=3)
-    backModifyBtn = tkinter.Button(mostAlbumsView, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn = tkinter.Button(mostAlbumsView, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(mostAlbumsView,currentUser))
     backModifyBtn.grid(row=11,column=2)
     mostAlbumsView.mainloop()
 
-def mostGenresView(currentUser):
+def mostGenresView(View,currentUser):
     cur = con.cursor()
     mostGenresView = tkinter.Tk()
+    View.destroy()
     mostGenresView.geometry("1000x500")
     for i in range(5):
         mostGenresView.columnconfigure(i,weight=1)
@@ -1746,13 +1787,14 @@ def mostGenresView(currentUser):
         x += 1
     space1 = tkinter.Label(mostGenresView, text="").grid(row=9,column=3)
     space2 = tkinter.Label(mostGenresView, text="").grid(row=10,column=3)
-    backModifyBtn = tkinter.Button(mostGenresView, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn = tkinter.Button(mostGenresView, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(mostGenresView,currentUser))
     backModifyBtn.grid(row=11,column=2)
     mostGenresView.mainloop()
 
-def playlistDurationView(currentUser):
+def playlistDurationView(View,currentUser):
     cur = con.cursor()
     playlistDuration = tkinter.Tk()
+    View.destroy()
     playlistDuration.geometry("1000x500")
     for i in range(5):
         playlistDuration.columnconfigure(i,weight=1)
@@ -1795,13 +1837,14 @@ def playlistDurationView(currentUser):
         x += 1
     space1 = tkinter.Label(playlistDuration, text="").grid(row=11,column=3)
     space2 = tkinter.Label(playlistDuration, text="").grid(row=12,column=3)
-    backModifyBtn = tkinter.Button(playlistDuration, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn = tkinter.Button(playlistDuration, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(playlistDuration,currentUser))
     backModifyBtn.grid(row=13,column=2)
     playlistDuration.mainloop()
 
-def longestSongsView(currentUser):
+def longestSongsView(View,currentUser):
     cur = con.cursor()
     longestSongs = tkinter.Tk()
+    View.destroy()
     longestSongs.geometry("1400x500")
     for i in range(5):
         longestSongs.columnconfigure(i,weight=1)
@@ -1849,13 +1892,14 @@ def longestSongsView(currentUser):
         x += 1
     space1 = tkinter.Label(longestSongs, text="").grid(row=9,column=3)
     space2 = tkinter.Label(longestSongs, text="").grid(row=10,column=3)
-    backModifyBtn = tkinter.Button(longestSongs, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn = tkinter.Button(longestSongs, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(longestSongs,currentUser))
     backModifyBtn.grid(row=11,column=2)
     longestSongs.mainloop()
 
-def mostUsersUploadsView(currentUser):
+def mostUsersUploadsView(View,currentUser):
     cur = con.cursor()
     userUploads = tkinter.Tk()
+    View.destroy()
     userUploads.geometry("1400x500")
     for i in range(5):
         userUploads.columnconfigure(i,weight=1)
@@ -1897,13 +1941,14 @@ def mostUsersUploadsView(currentUser):
         x += 1
     space1 = tkinter.Label(userUploads, text="").grid(row=9,column=3)
     space2 = tkinter.Label(userUploads, text="").grid(row=10,column=3)
-    backModifyBtn = tkinter.Button(userUploads, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn = tkinter.Button(userUploads, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(userUploads,currentUser))
     backModifyBtn.grid(row=11,column=2)
     userUploads.mainloop()
 
-def averageGDView(currentUser):
+def averageGDView(View,currentUser):
     cur = con.cursor()
     averageGD = tkinter.Tk()
+    View.destroy()
     averageGD.geometry("1000x500")
     for i in range(5):
         averageGD.columnconfigure(i,weight=1)
@@ -1946,13 +1991,14 @@ def averageGDView(currentUser):
         x += 1
     space1 = tkinter.Label(averageGD, text="").grid(row=11,column=3)
     space2 = tkinter.Label(averageGD, text="").grid(row=12,column=3)
-    backModifyBtn = tkinter.Button(averageGD, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn = tkinter.Button(averageGD, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(averageGD,currentUser))
     backModifyBtn.grid(row=13,column=2)
     averageGD.mainloop()
 
-def playlistArtistsView(currentUser):
+def playlistArtistsView(View,currentUser):
     cur = con.cursor()
     playlistArtists = tkinter.Tk()
+    View.destroy()
     playlistArtists.geometry("1000x500")
     for i in range(5):
         playlistArtists.columnconfigure(i,weight=1)
@@ -1997,13 +2043,14 @@ def playlistArtistsView(currentUser):
         x += 1
     space1 = tkinter.Label(playlistArtists, text="").grid(row=11,column=3)
     space2 = tkinter.Label(playlistArtists, text="").grid(row=12,column=3)
-    backModifyBtn = tkinter.Button(playlistArtists, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn = tkinter.Button(playlistArtists, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(playlistArtists,currentUser))
     backModifyBtn.grid(row=13,column=2)
     playlistArtists.mainloop()
 
-def diverseArtistsView(currentUser):
+def diverseArtistsView(View,currentUser):
     cur = con.cursor()
     diverseArtists = tkinter.Tk()
+    View.destroy()
     diverseArtists.geometry("1000x500")
     for i in range(5):
         diverseArtists.columnconfigure(i,weight=1)
@@ -2047,14 +2094,15 @@ def diverseArtistsView(currentUser):
         x += 1
     space1 = tkinter.Label(diverseArtists, text="").grid(row=9,column=3)
     space2 = tkinter.Label(diverseArtists, text="").grid(row=10,column=3)
-    backModifyBtn = tkinter.Button(diverseArtists, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn = tkinter.Button(diverseArtists, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(diverseArtists,currentUser))
     backModifyBtn.grid(row=11,column=2)
     diverseArtists.mainloop()
 
-def listenSongsAdminView(currentUser):
+def listenSongsAdminView(View,currentUser):
     global listenSongName2
     cur = con.cursor()
     listenSongsAdmin = tkinter.Tk()
+    View.destroy()
     listenSongsAdmin.geometry("1000x250")
     for i in range(5):
         listenSongsAdmin.columnconfigure(i,weight=1)
@@ -2075,14 +2123,15 @@ def listenSongsAdminView(currentUser):
     listenCustomerSong.grid(row=2,column=4)
     space1 = tkinter.Label(listenSongsAdmin, text="").grid(row=3,column=3)
     space2 = tkinter.Label(listenSongsAdmin, text="").grid(row=4,column=3)
-    backModifyBtn = tkinter.Button(listenSongsAdmin, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn = tkinter.Button(listenSongsAdmin, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(listenSongsAdmin,currentUser))
     backModifyBtn.grid(row=5,column=2)
     listenSongsAdmin.mainloop()
 
-def listenSongsCustomerView(currentUser):
+def listenSongsCustomerView(View,currentUser):
     global listenSongName
     cur = con.cursor()
     listenSongsCustomer = tkinter.Tk()
+    View.destroy()
     listenSongsCustomer.geometry("1000x700")
     songs = []
     username = currentUser['name']
@@ -2158,13 +2207,14 @@ def listenSongsCustomerView(currentUser):
         x += 1
     space1 = tkinter.Label(listenSongsCustomer, text="").grid(row=15,column=3)
     space2 = tkinter.Label(listenSongsCustomer, text="").grid(row=16,column=3)
-    backModifyBtn = tkinter.Button(listenSongsCustomer, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn = tkinter.Button(listenSongsCustomer, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(listenSongsCustomer,currentUser))
     backModifyBtn.grid(row=17,column=3)
     listenSongsCustomer.mainloop()
 
-def purchaseSongsView(currentUser):
+def purchaseSongsView(View,currentUser):
     global purchaseSongName
     purchaseSongs = tkinter.Tk()
+    View.destroy()
     purchaseSongs.geometry("1000x350")
     purchaseSongs.title("D")
     wishlist = []
@@ -2186,16 +2236,17 @@ def purchaseSongsView(currentUser):
     purchaseSongsBtn = tkinter.Button(purchaseSongs, text="Add Song to Shopping Cart", padx=15, pady=5, bg="#c8c8c8", command = lambda: addSongToWishlist(currentUser,wishlist))
     purchaseSongsBtn.grid(row=4,column=2)
     space1 = tkinter.Label(purchaseSongs, text="").grid(row=5,column=3)
-    purchaseSongsBtn = tkinter.Button(purchaseSongs, text="Proceed to Checkout", padx=15, pady=5, bg="#c8c8c8", command = lambda: checkoutView(currentUser,wishlist))
+    purchaseSongsBtn = tkinter.Button(purchaseSongs, text="Proceed to Checkout", padx=15, pady=5, bg="#c8c8c8", command = lambda: checkoutView(purchaseSongs,currentUser,wishlist))
     purchaseSongsBtn.grid(row=6,column=2)
     space2 = tkinter.Label(purchaseSongs, text="").grid(row=7,column=3)
-    backModifyBtn = tkinter.Button(purchaseSongs, text="Back", padx=15, pady=5, bg="#c8c8c8")
+    backModifyBtn = tkinter.Button(purchaseSongs, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(purchaseSongs,currentUser))
     backModifyBtn.grid(row=8,column=2)
     purchaseSongs.mainloop()
 
-def checkoutView(currentUser,wishlist):
+def checkoutView(View,currentUser,wishlist):
     cur = con.cursor()
     checkoutView = tkinter.Tk()
+    View.destroy()
     checkoutView.geometry("1000x550")
     checkoutView.title("D")
     for i in range(5):
@@ -2247,7 +2298,7 @@ def checkoutView(currentUser,wishlist):
     buySongsBtn = tkinter.Button(checkoutView, text="Buy Songs", padx=15, pady=5, bg="#c8c8c8", command = lambda: songPayment(currentUser,wishlist,totalprice))
     buySongsBtn.grid(row=i+4,column=2)
     space3 = tkinter.Label(checkoutView, text="").grid(row=i+5,column=2)
-    buySongsBtn = tkinter.Button(checkoutView, text="Cancel Payment", padx=15, pady=5, bg="#c8c8c8")
+    buySongsBtn = tkinter.Button(checkoutView, text="Cancel Payment", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(checkoutView,currentUser))
     buySongsBtn.grid(row=i+6,column=2)
     checkoutView.mainloop()
 
