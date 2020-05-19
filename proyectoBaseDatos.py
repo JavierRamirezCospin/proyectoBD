@@ -77,10 +77,11 @@ def insertNewAlbum(currentUser):
                 cur.execute("""INSERT INTO album (albumid, title, artistid)
                             VALUES (%(AlbumId)s,%(Title)s,%(ArtistId)s)""",dictionary2)
                 con.commit()
-                print("-> Album Registered Succesfully!")
+                print("\n-> Album Registered Succesfully!")
         cur.close()
     except:
-        print("-> Album Registration Failed!")
+        print("\n-> Album Registration Failed!")
+        print("-> Try Checking if there is an ARTIST with that Name!")
 
 def insertNewSong(currentUser):
     try:
@@ -208,7 +209,8 @@ def insertNewSong(currentUser):
             print("\n-> Song Registered Succesfully!")
         cur.close()
     except:
-        print("New Song Registration Failed!")
+        print("\n-> New Song Registration Failed!")
+        print("-> Try Checking if there is an ARTIST or an ALBUM with that Name!")
 
 def modifyArtist(currentUser):
     try:
@@ -461,6 +463,7 @@ def listenAdminSongsFunction(currentUser):
             songsIDS = cur.fetchall()
             for songID in songsIDS:
                 rightSongPlayingID = songID[0]
+                rightSongPlayingID += 1
             dictionary2 = {'SongPlayingID':rightSongPlayingID,
                            'TrackID':rightTrackID,
                            'Playing':amount}
@@ -493,7 +496,7 @@ def listenCustomerSongsFunction(currentUser):
         for r in rows1:
             customerID = r[0]
         dictionary2 = {'customerID':customerID}
-        cur.execute("""SELECT track.name, track.songURL
+        cur.execute("""SELECT track.name, track.songURL, trackid
                 from (select invoiceline.invoiceid as INVOICELINEID, invoiceline.trackid as INVOICELINETRACKID
                 from invoiceline) mid
                 left join track on track.trackid = mid.INVOICELINETRACKID
@@ -502,6 +505,23 @@ def listenCustomerSongsFunction(currentUser):
         rows = cur.fetchall()
         for r in rows:
             if songTitle == r[0]:
+                rightSongPlayingID = 0
+                rightTrackID = r[2]
+                amount = 1
+                cur.execute("""SELECT songplayingid
+                            FROM songplayings
+                            ORDER BY songplayingid desc
+                            LIMIT 1""")
+                songsIDS = cur.fetchall()
+                for songID in songsIDS:
+                    rightSongPlayingID = songID[0]
+                    rightSongPlayingID += 1
+                dictionary2 = {'SongPlayingID':rightSongPlayingID,
+                               'TrackID':rightTrackID,
+                               'Playing':amount}
+                cur.execute("""INSERT INTO songplayings (songplayingid, trackid, playing)
+                            VALUES (%(SongPlayingID)s,%(TrackID)s,%(Playing)s);""",dictionary2)
+                con.commit()
                 new=2
                 url=r[1]
                 webbrowser.open(url,new=new)
@@ -680,11 +700,11 @@ def searchClients(currentUser):
         collectionName = 'clients-'+date[:4]
         collection = db[collectionName]
         for client in clients:
-            clien = db.collection.insert_many({"ClientID":client[0],"InvoiceDate":client[1],"TrackID":client[2]})
+            clien = db.collection.insert_one({"ClientID":client[0],"InvoiceDate":client[1],"TrackID":client[2]})
         cur.close()
-        print("\n-> CSV File Generated Succesfully!")
+        print("\n-> MongoDB Updated Succesfully!")
     except:
-        print("\n-> CSV File Generation Unsuccessful!")
+        print("\n-> MongoDB Update Unsuccessful!")
 
 def exportArtistSellingsCSV(rows,currentUser):
     try:
@@ -702,7 +722,56 @@ def exportArtistSellingsCSV(rows,currentUser):
         print("\n-> CSV Generation Successfully!")
     except:
         print("\n-> CSV Generation Failed!")
-        
+
+def exportGenreSellingsCSV(rows,currentUser):
+    try:
+        cur = con.cursor()
+        with open('GenreSellings.csv', 'w', newline='') as f:
+                fieldnames = ['Genre','Sum']
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for r in rows:
+                    artist = r[0]
+                    sumatory = r[1]
+                    writer.writerow({'Genre':artist,
+                                     'Sum':sumatory})
+        cur.close()
+        print("\n-> CSV Generation Successfully!")
+    except:
+        print("\n-> CSV Generation Failed!")
+
+def exportSongPlayingsCSV(rows,currentUser):
+    try:
+        cur = con.cursor()
+        with open('SongPlayings.csv', 'w', newline='') as f:
+                fieldnames = ['Song','Playbacks']
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for r in rows:
+                    artist = r[0]
+                    sumatory = r[1]
+                    writer.writerow({'Song':artist,
+                                     'Playbacks':sumatory})
+        cur.close()
+        print("\n-> CSV Generation Successfully!")
+    except:
+        print("\n-> CSV Generation Failed!")
+
+def exportSellingsCSV(rows,currentUser):
+    try:
+        cur = con.cursor()
+        with open('TotalSellings.csv', 'w', newline='') as f:
+                fieldnames = ['Sum']
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for r in rows:
+                    sumatory = r[0]
+                    writer.writerow({'Sum':sumatory})
+        cur.close()
+        print("\n-> CSV Generation Successfully!")
+    except:
+        print("\n-> CSV Generation Failed!")
+    
 def registerUser(con):
     try:
         cur = con.cursor()
@@ -1023,16 +1092,6 @@ def customer1View(currentUser):
     space4 = tkinter.Label(customer1View, text="").grid(row=5,column=3)
     purchaseSongs = tkinter.Button(customer1View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(customer1View,currentUser))
     purchaseSongs.grid(row=6,column=3)
-    purchaseSongs = tkinter.Button(customer1View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(customer1View,currentUser))
-    purchaseSongs.grid(row=6,column=3)
-    salesPerWeekBtn = tkinter.Button(customer1View, text="Sales per Week",width=20,height=1, command = lambda: listenSongsAdminView(customer1View,currentUser))
-    salesPerWeekBtn.grid(row=4,column=4)
-    salesPerArtist = tkinter.Button(customer1View, text="Sales per Artist",width=20,height=1, command = lambda: listenSongsAdminView(customer1View,currentUser))
-    salesPerArtist.grid(row=6,column=4)
-    salesPerGenre = tkinter.Button(customer1View, text="Sales per Genre",width=20,height=1, command = lambda: listenSongsAdminView(customer1View,currentUser))
-    salesPerGenre.grid(row=8,column=4)
-    artistPlaybackBtn = tkinter.Button(customer1View, text="Artist Playback",width=20,height=1, command = lambda: listenSongsAdminView(customer1View,currentUser))
-    artistPlaybackBtn.grid(row=10,column=4)
     space1 = tkinter.Label(customer1View, text="").grid(row=7,column=1)
     space2 = tkinter.Label(customer1View, text="").grid(row=8,column=1)
     space3 = tkinter.Label(customer1View, text="").grid(row=9,column=1)
@@ -1094,13 +1153,13 @@ def customer2View(currentUser):
     space4 = tkinter.Label(customer2View, text="").grid(row=5,column=3)
     purchaseSongs = tkinter.Button(customer2View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(customer2View,currentUser))
     purchaseSongs.grid(row=6,column=3)
-    salesPerWeekBtn = tkinter.Button(customer2View, text="Sales per Week",width=20,height=1, command = lambda: listenSongsAdminView(customer2View,currentUser))
+    salesPerWeekBtn = tkinter.Button(customer2View, text="Sales per Week",width=20,height=1, command = lambda: rangeSellingsView(customer2View,currentUser))
     salesPerWeekBtn.grid(row=4,column=4)
-    salesPerArtist = tkinter.Button(customer2View, text="Sales per Artist",width=20,height=1, command = lambda: listenSongsAdminView(customer2View,currentUser))
+    salesPerArtist = tkinter.Button(customer2View, text="Sales per Artist",width=20,height=1, command = lambda: artistSellingsView(customer2View,currentUser))
     salesPerArtist.grid(row=6,column=4)
-    salesPerGenre = tkinter.Button(customer2View, text="Sales per Genre",width=20,height=1, command = lambda: listenSongsAdminView(customer2View,currentUser))
+    salesPerGenre = tkinter.Button(customer2View, text="Sales per Genre",width=20,height=1, command = lambda: genreSellingsView(customer2View,currentUser))
     salesPerGenre.grid(row=8,column=4)
-    artistPlaybackBtn = tkinter.Button(customer2View, text="Artist Playback",width=20,height=1, command = lambda: listenSongsAdminView(customer2View,currentUser))
+    artistPlaybackBtn = tkinter.Button(customer2View, text="Artist Playback",width=20,height=1, command = lambda: artistPlayedSongsView(customer2View,currentUser))
     artistPlaybackBtn.grid(row=10,column=4)
     space0 = tkinter.Label(customer2View, text="").grid(row=10,column=1)
     space0 = tkinter.Label(customer2View, text="").grid(row=11,column=1)
@@ -1165,13 +1224,13 @@ def customer3View(currentUser):
     space4 = tkinter.Label(customer3View, text="").grid(row=5,column=3)
     purchaseSongs = tkinter.Button(customer3View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(customer3View,currentUser))
     purchaseSongs.grid(row=6,column=3)
-    salesPerWeekBtn = tkinter.Button(customer3View, text="Sales per Week",width=20,height=1, command = lambda: listenSongsAdminView(customer3View,currentUser))
+    salesPerWeekBtn = tkinter.Button(customer3View, text="Sales per Week",width=20,height=1, command = lambda: rangeSellingsView(customer3View,currentUser))
     salesPerWeekBtn.grid(row=4,column=4)
-    salesPerArtist = tkinter.Button(customer3View, text="Sales per Artist",width=20,height=1, command = lambda: listenSongsAdminView(customer3View,currentUser))
+    salesPerArtist = tkinter.Button(customer3View, text="Sales per Artist",width=20,height=1, command = lambda: artistSellingsView(customer3View,currentUser))
     salesPerArtist.grid(row=6,column=4)
-    salesPerGenre = tkinter.Button(customer3View, text="Sales per Genre",width=20,height=1, command = lambda: listenSongsAdminView(customer3View,currentUser))
+    salesPerGenre = tkinter.Button(customer3View, text="Sales per Genre",width=20,height=1, command = lambda: genreSellingsView(customer3View,currentUser))
     salesPerGenre.grid(row=8,column=4)
-    artistPlaybackBtn = tkinter.Button(customer3View, text="Artist Playback",width=20,height=1, command = lambda: listenSongsAdminView(customer3View,currentUser))
+    artistPlaybackBtn = tkinter.Button(customer3View, text="Artist Playback",width=20,height=1, command = lambda: artistPlayedSongsView(customer3View,currentUser))
     artistPlaybackBtn.grid(row=10,column=4)
     space0 = tkinter.Label(customer3View, text="").grid(row=15,column=1)
     space0 = tkinter.Label(customer3View, text="").grid(row=16,column=1)
@@ -1251,7 +1310,7 @@ def adminView(currentUser):
     promotion.grid(row=12,column=3)
     intelligence = tkinter.Button(adminWindow, text="Intelligence",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
     intelligence.grid(row=14,column=3)
-    salesPerWeekBtn = tkinter.Button(adminWindow, text="Sales per Week",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
+    salesPerWeekBtn = tkinter.Button(adminWindow, text="Sales per Week",width=20,height=1, command = lambda: rangeSellingsView(adminWindow,currentUser))
     salesPerWeekBtn.grid(row=4,column=4)
     salesPerArtist = tkinter.Button(adminWindow, text="Sales per Artist",width=20,height=1, command = lambda: artistSellingsView(adminWindow,currentUser))
     salesPerArtist.grid(row=6,column=4)
@@ -2622,7 +2681,7 @@ def showGenreSellingsView(View,currentUser):
         i += 1
         x += 1
     space1 = tkinter.Label(showGenreSellingsWindow, text="").grid(row=i+1,column=2)
-    csvBtn = tkinter.Button(showGenreSellingsWindow, text="Export To CSV", padx=15, pady=5, bg="#c8c8c8", command = lambda: exportArtistSellingsCSV(rows,currentUser))
+    csvBtn = tkinter.Button(showGenreSellingsWindow, text="Export To CSV", padx=15, pady=5, bg="#c8c8c8", command = lambda: exportGenreSellingsCSV(rows,currentUser))
     csvBtn.grid(row=i+2,column=2)
     space2 = tkinter.Label(showGenreSellingsWindow, text="").grid(row=i+3,column=2)
     backModifyBtn = tkinter.Button(showGenreSellingsWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(showGenreSellingsWindow,currentUser))
@@ -2715,13 +2774,98 @@ def showArtistPlayingSongsView(View,currentUser):
         i += 1
         x += 1
     space1 = tkinter.Label(showArtistPlayingSongsWindow, text="").grid(row=i+1,column=2)
-    csvBtn = tkinter.Button(showArtistPlayingSongsWindow, text="Export To CSV", padx=15, pady=5, bg="#c8c8c8", command = lambda: exportArtistSellingsCSV(rows,currentUser))
+    csvBtn = tkinter.Button(showArtistPlayingSongsWindow, text="Export To CSV", padx=15, pady=5, bg="#c8c8c8", command = lambda: exportSongPlayingsCSV(rows,currentUser))
     csvBtn.grid(row=i+2,column=2)
     space2 = tkinter.Label(showArtistPlayingSongsWindow, text="").grid(row=i+3,column=2)
     backModifyBtn = tkinter.Button(showArtistPlayingSongsWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(showArtistPlayingSongsWindow,currentUser))
     backModifyBtn.grid(row=i+4,column=2)
     View.destroy()
     showArtistPlayingSongsWindow.mainloop()
+
+def rangeSellingsView(View,currentUser):
+    global rangeSellingsBegDate, rangeSellingsFinDate
+    cur = con.cursor()
+    rangeSellingsWindow = tkinter.Tk()
+    View.destroy()
+    rangeSellingsWindow.geometry("900x400")
+    rangeSellingsWindow.title("Range Sellings")
+    for i in range(5):
+        rangeSellingsWindow.columnconfigure(i,weight=1)
+    space00 = tkinter.Label(rangeSellingsWindow, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(rangeSellingsWindow, text="RANGE SELLINGS")
+    windowTitle.config(font=("Helvetica",20,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(rangeSellingsWindow, text="").grid(row=2,column=3)
+    subTitle0 = tkinter.Label(rangeSellingsWindow, text="Initial Date")
+    subTitle0.config(font=("Helvetica",15,"bold"))
+    subTitle0.grid(row=3,column=1)
+    subTitle4 = tkinter.Label(rangeSellingsWindow, text="YYYY-MM-DD")
+    subTitle4.config(font=("Helvetica",15))
+    subTitle4.grid(row=4,column=1)
+    subTitle = tkinter.Label(rangeSellingsWindow, text="Final Date")
+    subTitle.config(font=("Helvetica",15,"bold"))
+    subTitle.grid(row=3,column=3)
+    subTitle3 = tkinter.Label(rangeSellingsWindow, text="YYYY-MM-DD")
+    subTitle3.config(font=("Helvetica",15))
+    subTitle3.grid(row=4,column=3)
+    rangeSellingsBegDate = tkinter.Entry(rangeSellingsWindow, font="Helvetica 10")
+    rangeSellingsBegDate.grid(row=5,column=1)
+    rangeSellingsFinDate = tkinter.Entry(rangeSellingsWindow, font="Helvetica 10")
+    rangeSellingsFinDate.grid(row=5,column=3)
+    space1 = tkinter.Label(rangeSellingsWindow, text="").grid(row=6,column=3)
+    searchBtn = tkinter.Button(rangeSellingsWindow, text="Search", padx=15, pady=5, bg="#c8c8c8", command = lambda: showRangeSellingsView(rangeSellingsWindow,currentUser))
+    searchBtn.grid(row=7,column=2)
+    space1 = tkinter.Label(rangeSellingsWindow, text="").grid(row=8,column=2)
+    backModifyBtn = tkinter.Button(rangeSellingsWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(rangeSellingsWindow,currentUser))
+    backModifyBtn.grid(row=9,column=2)
+    rangeSellingsWindow.mainloop()
+
+def showRangeSellingsView(View,currentUser):
+    cur = con.cursor()
+    showRangeSellingsWindow = tkinter.Tk()
+    showRangeSellingsWindow.geometry("900x400")
+    showRangeSellingsWindow.title("Artist Playback")
+    for i in range(5):
+        showRangeSellingsWindow.columnconfigure(i,weight=1)
+    space00 = tkinter.Label(showRangeSellingsWindow, text="").grid(row=0,column=2)
+    windowTitle = tkinter.Label(showRangeSellingsWindow, text="RANGE SELLINGS")
+    windowTitle.config(font=("Helvetica",15,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(showRangeSellingsWindow, text="").grid(row=2,column=2)
+    Instruction1 = tkinter.Label(showRangeSellingsWindow,text="Number")
+    Instruction1.config(font=("Helvetica",13,"bold"))
+    Instruction1.grid(row=3,column=1)
+    Instruction2 = tkinter.Label(showRangeSellingsWindow,text="Sum")
+    Instruction2.config(font=("Helvetica",13,"bold"))
+    Instruction2.grid(row=3,column=2)
+    beginDate = rangeSellingsBegDate.get()
+    endDate = rangeSellingsFinDate.get()
+    dictionary = {'BeginDate':beginDate,
+                  'EndDate':endDate}
+    cur.execute("""select sum(total)
+            from invoice
+            where invoicedate > %(BeginDate)s and invoicedate < %(EndDate)s
+            limit 1;""",dictionary)
+    rows = cur.fetchall()
+    i = 4
+    x = 1
+    for r in rows:
+        number = tkinter.Label(showRangeSellingsWindow, text=x)
+        number.config(font=("Helvetica",15))
+        number.grid(row=i,column=1)
+        songname = tkinter.Label(showRangeSellingsWindow,text=r[0])
+        songname.config(font=("Helvetica",15))
+        songname.grid(row=i,column=2)
+        i += 1
+        x += 1
+    space1 = tkinter.Label(showRangeSellingsWindow, text="").grid(row=i+1,column=2)
+    csvBtn = tkinter.Button(showRangeSellingsWindow, text="Export To CSV", padx=15, pady=5, bg="#c8c8c8", command = lambda: exportSellingsCSV(rows,currentUser))
+    csvBtn.grid(row=i+2,column=2)
+    space2 = tkinter.Label(showRangeSellingsWindow, text="").grid(row=i+3,column=2)
+    backModifyBtn = tkinter.Button(showRangeSellingsWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(showRangeSellingsWindow,currentUser))
+    backModifyBtn.grid(row=i+4,column=2)
+    View.destroy()
+    showRangeSellingsWindow.mainloop()
 
 ##################################################################################################################
                                                 #Programa
