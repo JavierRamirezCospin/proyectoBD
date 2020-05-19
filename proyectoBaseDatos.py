@@ -445,12 +445,28 @@ def listenAdminSongsFunction(currentUser):
         message = "\n-> Song not found, please try again!"
         songName = listenSongName2.get()
         dictionary = {'Name':songName}
-        cur.execute("""SELECT songURL
+        cur.execute("""SELECT songURL, trackid
                     from track
                     where name = %(Name)s
                     limit 1;""",dictionary)
         rows = cur.fetchall()
         for r in rows:
+            rightSongPlayingID = 0
+            rightTrackID = r[1]
+            amount = 1
+            cur.execute("""SELECT songplayingid
+                        FROM songplayings
+                        ORDER BY songplayingid desc
+                        LIMIT 1""")
+            songsIDS = cur.fetchall()
+            for songID in songsIDS:
+                rightSongPlayingID = songID[0]
+            dictionary2 = {'SongPlayingID':rightSongPlayingID,
+                           'TrackID':rightTrackID,
+                           'Playing':amount}
+            cur.execute("""INSERT INTO songplayings (songplayingid, trackid, playing)
+                        VALUES (%(SongPlayingID)s,%(TrackID)s,%(Playing)s);""",dictionary2)
+            con.commit()
             new=2
             url=r[0]
             webbrowser.open(url,new=new)
@@ -669,7 +685,24 @@ def searchClients(currentUser):
         print("\n-> CSV File Generated Succesfully!")
     except:
         print("\n-> CSV File Generation Unsuccessful!")
-    
+
+def exportArtistSellingsCSV(rows,currentUser):
+    try:
+        cur = con.cursor()
+        with open('ArtistSellings.csv', 'w', newline='') as f:
+                fieldnames = ['Artist','Sum']
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for r in rows:
+                    artist = r[0]
+                    sumatory = r[1]
+                    writer.writerow({'Artist':artist,
+                                     'Sum':sumatory})
+        cur.close()
+        print("\n-> CSV Generation Successfully!")
+    except:
+        print("\n-> CSV Generation Failed!")
+        
 def registerUser(con):
     try:
         cur = con.cursor()
@@ -1220,11 +1253,11 @@ def adminView(currentUser):
     intelligence.grid(row=14,column=3)
     salesPerWeekBtn = tkinter.Button(adminWindow, text="Sales per Week",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
     salesPerWeekBtn.grid(row=4,column=4)
-    salesPerArtist = tkinter.Button(adminWindow, text="Sales per Artist",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
+    salesPerArtist = tkinter.Button(adminWindow, text="Sales per Artist",width=20,height=1, command = lambda: artistSellingsView(adminWindow,currentUser))
     salesPerArtist.grid(row=6,column=4)
-    salesPerGenre = tkinter.Button(adminWindow, text="Sales per Genre",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
+    salesPerGenre = tkinter.Button(adminWindow, text="Sales per Genre",width=20,height=1, command = lambda: genreSellingsView(adminWindow,currentUser))
     salesPerGenre.grid(row=8,column=4)
-    artistPlaybackBtn = tkinter.Button(adminWindow, text="Artist Playback",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
+    artistPlaybackBtn = tkinter.Button(adminWindow, text="Artist Playback",width=20,height=1, command = lambda: artistPlayedSongsView(adminWindow,currentUser))
     artistPlaybackBtn.grid(row=10,column=4)
     space8 = tkinter.Label(adminWindow, text="").grid(row=18,column=1)
     space9 = tkinter.Label(adminWindow, text="").grid(row=19,column=1)
@@ -2386,6 +2419,309 @@ def promotionView(View,currentUser):
     space2 = tkinter.Label(promotionWindow, text="").pack()
     backModifyBtn = tkinter.Button(promotionWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(promotionWindow,currentUser)).pack()
     promotionWindow.mainloop()
+
+def artistSellingsView(View,currentUser):
+    global artistSellingsBegDate, artistSellingsFinDate, artistSellingsLimit
+    cur = con.cursor()
+    artistSellingsWindow = tkinter.Tk()
+    View.destroy()
+    artistSellingsWindow.geometry("900x400")
+    artistSellingsWindow.title("Artist Sellings")
+    for i in range(5):
+        artistSellingsWindow.columnconfigure(i,weight=1)
+    space00 = tkinter.Label(artistSellingsWindow, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(artistSellingsWindow, text="ARTIST SELLINGS")
+    windowTitle.config(font=("Helvetica",20,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(artistSellingsWindow, text="").grid(row=2,column=3)
+    subTitle0 = tkinter.Label(artistSellingsWindow, text="Initial Date")
+    subTitle0.config(font=("Helvetica",15,"bold"))
+    subTitle0.grid(row=3,column=1)
+    subTitle4 = tkinter.Label(artistSellingsWindow, text="YYYY-MM-DD")
+    subTitle4.config(font=("Helvetica",15))
+    subTitle4.grid(row=4,column=1)
+    subTitle = tkinter.Label(artistSellingsWindow, text="Final Date")
+    subTitle.config(font=("Helvetica",15,"bold"))
+    subTitle.grid(row=3,column=3)
+    subTitle3 = tkinter.Label(artistSellingsWindow, text="YYYY-MM-DD")
+    subTitle3.config(font=("Helvetica",15))
+    subTitle3.grid(row=4,column=3)
+    artistSellingsBegDate = tkinter.Entry(artistSellingsWindow, font="Helvetica 10")
+    artistSellingsBegDate.grid(row=5,column=1)
+    artistSellingsFinDate = tkinter.Entry(artistSellingsWindow, font="Helvetica 10")
+    artistSellingsFinDate.grid(row=5,column=3)
+    space1 = tkinter.Label(artistSellingsWindow, text="").grid(row=5,column=3)
+    subTitle2 = tkinter.Label(artistSellingsWindow, text="Limit")
+    subTitle2.config(font=("Helvetica",15,"bold"))
+    subTitle2.grid(row=6,column=2)
+    artistSellingsLimit = tkinter.Entry(artistSellingsWindow, font="Helvetica 10")
+    artistSellingsLimit.grid(row=7,column=2)
+    space2 = tkinter.Label(artistSellingsWindow, text="").grid(row=8,column=3)
+    searchBtn = tkinter.Button(artistSellingsWindow, text="Search", padx=15, pady=5, bg="#c8c8c8", command = lambda: showArtistSellingsView(artistSellingsWindow,currentUser))
+    searchBtn.grid(row=9,column=2)
+    space1 = tkinter.Label(artistSellingsWindow, text="").grid(row=10,column=2)
+    backModifyBtn = tkinter.Button(artistSellingsWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(artistSellingsWindow,currentUser))
+    backModifyBtn.grid(row=11,column=2)
+    artistSellingsWindow.mainloop()
+
+def showArtistSellingsView(View,currentUser):
+    cur = con.cursor()
+    showArtistSellingsWindow = tkinter.Tk()
+    showArtistSellingsWindow.geometry("900x400")
+    showArtistSellingsWindow.title("Artist Sellings")
+    for i in range(5):
+        showArtistSellingsWindow.columnconfigure(i,weight=1)
+    space00 = tkinter.Label(showArtistSellingsWindow, text="").grid(row=0,column=2)
+    windowTitle = tkinter.Label(showArtistSellingsWindow, text="ARTIST SELLINGS")
+    windowTitle.config(font=("Helvetica",15,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(showArtistSellingsWindow, text="").grid(row=2,column=2)
+    Instruction1 = tkinter.Label(showArtistSellingsWindow,text="Number")
+    Instruction1.config(font=("Helvetica",13,"bold"))
+    Instruction1.grid(row=3,column=1)
+    Instruction2 = tkinter.Label(showArtistSellingsWindow,text="Artist")
+    Instruction2.config(font=("Helvetica",13,"bold"))
+    Instruction2.grid(row=3,column=2)
+    Instruction3 = tkinter.Label(showArtistSellingsWindow,text="Amount (Dollars)")
+    Instruction3.config(font=("Helvetica",13,"bold"))
+    Instruction3.grid(row=3,column=3)
+    initDate = artistSellingsBegDate.get()
+    finDate = artistSellingsFinDate.get()
+    limit = artistSellingsLimit.get()
+    limit = int(limit)
+    dictionary = {'InitDate':initDate,
+                  'FinDate':finDate,
+                  'Limit':limit}
+    cur.execute("""select track.composer, sum(invoice.total)
+                from invoiceline
+                left join invoice on invoice.invoiceid = invoiceline.invoiceid
+                left join track on track.trackid = invoiceline.trackid
+                where invoice.invoicedate > %(InitDate)s and invoice.invoicedate < %(FinDate)s
+                group by track.composer
+                order by sum(invoice.total) desc
+                limit %(Limit)s offset 1;""",dictionary)
+    rows = cur.fetchall()
+    i = 4
+    x = 1
+    for r in rows:
+        number = tkinter.Label(showArtistSellingsWindow, text=x)
+        number.config(font=("Helvetica",15))
+        number.grid(row=i,column=1)
+        artist = tkinter.Label(showArtistSellingsWindow,text=r[0])
+        artist.config(font=("Helvetica",15))
+        artist.grid(row=i,column=2)
+        sumatory = tkinter.Label(showArtistSellingsWindow,text=str(r[1]))
+        sumatory.config(font=("Helvetica",15))
+        sumatory.grid(row=i,column=3)
+        i += 1
+        x += 1
+    space1 = tkinter.Label(showArtistSellingsWindow, text="").grid(row=i+1,column=2)
+    csvBtn = tkinter.Button(showArtistSellingsWindow, text="Export To CSV", padx=15, pady=5, bg="#c8c8c8", command = lambda: exportArtistSellingsCSV(rows,currentUser))
+    csvBtn.grid(row=i+2,column=2)
+    space2 = tkinter.Label(showArtistSellingsWindow, text="").grid(row=i+3,column=2)
+    backModifyBtn = tkinter.Button(showArtistSellingsWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(showArtistSellingsWindow,currentUser))
+    backModifyBtn.grid(row=i+4,column=2)
+    View.destroy()
+    showArtistSellingsWindow.mainloop()
+
+def genreSellingsView(View,currentUser):
+    global genreSellingsBegDate, genreSellingsFinDate, genreSellingsLimit
+    cur = con.cursor()
+    genreSellingsWindow = tkinter.Tk()
+    View.destroy()
+    genreSellingsWindow.geometry("900x400")
+    genreSellingsWindow.title("Genre Sellings")
+    for i in range(5):
+        genreSellingsWindow.columnconfigure(i,weight=1)
+    space00 = tkinter.Label(genreSellingsWindow, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(genreSellingsWindow, text="GENRE SELLINGS")
+    windowTitle.config(font=("Helvetica",20,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(genreSellingsWindow, text="").grid(row=2,column=3)
+    subTitle0 = tkinter.Label(genreSellingsWindow, text="Initial Date")
+    subTitle0.config(font=("Helvetica",15,"bold"))
+    subTitle0.grid(row=3,column=1)
+    subTitle4 = tkinter.Label(genreSellingsWindow, text="YYYY-MM-DD")
+    subTitle4.config(font=("Helvetica",15))
+    subTitle4.grid(row=4,column=1)
+    subTitle = tkinter.Label(genreSellingsWindow, text="Final Date")
+    subTitle.config(font=("Helvetica",15,"bold"))
+    subTitle.grid(row=3,column=3)
+    subTitle3 = tkinter.Label(genreSellingsWindow, text="YYYY-MM-DD")
+    subTitle3.config(font=("Helvetica",15))
+    subTitle3.grid(row=4,column=3)
+    genreSellingsBegDate = tkinter.Entry(genreSellingsWindow, font="Helvetica 10")
+    genreSellingsBegDate.grid(row=5,column=1)
+    genreSellingsFinDate = tkinter.Entry(genreSellingsWindow, font="Helvetica 10")
+    genreSellingsFinDate.grid(row=5,column=3)
+    space1 = tkinter.Label(genreSellingsWindow, text="").grid(row=5,column=3)
+    subTitle2 = tkinter.Label(genreSellingsWindow, text="Limit")
+    subTitle2.config(font=("Helvetica",15,"bold"))
+    subTitle2.grid(row=6,column=2)
+    genreSellingsLimit = tkinter.Entry(genreSellingsWindow, font="Helvetica 10")
+    genreSellingsLimit.grid(row=7,column=2)
+    space2 = tkinter.Label(genreSellingsWindow, text="").grid(row=8,column=3)
+    searchBtn = tkinter.Button(genreSellingsWindow, text="Search", padx=15, pady=5, bg="#c8c8c8", command = lambda: showGenreSellingsView(genreSellingsWindow,currentUser))
+    searchBtn.grid(row=9,column=2)
+    space1 = tkinter.Label(genreSellingsWindow, text="").grid(row=10,column=2)
+    backModifyBtn = tkinter.Button(genreSellingsWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(genreSellingsWindow,currentUser))
+    backModifyBtn.grid(row=11,column=2)
+    genreSellingsWindow.mainloop()
+
+def showGenreSellingsView(View,currentUser):
+    cur = con.cursor()
+    showGenreSellingsWindow = tkinter.Tk()
+    showGenreSellingsWindow.geometry("900x400")
+    showGenreSellingsWindow.title("Genre Sellings")
+    for i in range(5):
+        showGenreSellingsWindow.columnconfigure(i,weight=1)
+    space00 = tkinter.Label(showGenreSellingsWindow, text="").grid(row=0,column=2)
+    windowTitle = tkinter.Label(showGenreSellingsWindow, text="GENRE SELLINGS")
+    windowTitle.config(font=("Helvetica",15,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(showGenreSellingsWindow, text="").grid(row=2,column=2)
+    Instruction1 = tkinter.Label(showGenreSellingsWindow,text="Number")
+    Instruction1.config(font=("Helvetica",13,"bold"))
+    Instruction1.grid(row=3,column=1)
+    Instruction2 = tkinter.Label(showGenreSellingsWindow,text="Genre")
+    Instruction2.config(font=("Helvetica",13,"bold"))
+    Instruction2.grid(row=3,column=2)
+    Instruction3 = tkinter.Label(showGenreSellingsWindow,text="Amount (Dollars)")
+    Instruction3.config(font=("Helvetica",13,"bold"))
+    Instruction3.grid(row=3,column=3)
+    initDate = genreSellingsBegDate.get()
+    finDate = genreSellingsFinDate.get()
+    limit = genreSellingsLimit.get()
+    limit = int(limit)
+    dictionary = {'InitDate':initDate,
+                  'FinDate':finDate,
+                  'Limit':limit}
+    cur.execute("""select mid.GENRENAME, sum(invoice.total)
+            from invoiceline
+            left join invoice on invoice.invoiceid = invoiceline.invoiceid
+            left join (select track.trackid as TRACKID, genre.name AS GENRENAME
+            from track
+            left join genre on track.genreid = genre.genreid) mid ON mid.TRACKID = invoiceline.trackid
+            where invoice.invoicedate > %(InitDate)s and invoice.invoicedate < %(FinDate)s
+            group by mid.GENRENAME
+            order by sum(invoice.total) desc
+            limit %(Limit)s;""",dictionary)
+    rows = cur.fetchall()
+    i = 4
+    x = 1
+    for r in rows:
+        number = tkinter.Label(showGenreSellingsWindow, text=x)
+        number.config(font=("Helvetica",15))
+        number.grid(row=i,column=1)
+        genre = tkinter.Label(showGenreSellingsWindow,text=r[0])
+        genre.config(font=("Helvetica",15))
+        genre.grid(row=i,column=2)
+        sumatory = tkinter.Label(showGenreSellingsWindow,text=str(r[1]))
+        sumatory.config(font=("Helvetica",15))
+        sumatory.grid(row=i,column=3)
+        i += 1
+        x += 1
+    space1 = tkinter.Label(showGenreSellingsWindow, text="").grid(row=i+1,column=2)
+    csvBtn = tkinter.Button(showGenreSellingsWindow, text="Export To CSV", padx=15, pady=5, bg="#c8c8c8", command = lambda: exportArtistSellingsCSV(rows,currentUser))
+    csvBtn.grid(row=i+2,column=2)
+    space2 = tkinter.Label(showGenreSellingsWindow, text="").grid(row=i+3,column=2)
+    backModifyBtn = tkinter.Button(showGenreSellingsWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(showGenreSellingsWindow,currentUser))
+    backModifyBtn.grid(row=i+4,column=2)
+    View.destroy()
+    showGenreSellingsWindow.mainloop()
+
+def artistPlayedSongsView(View,currentUser):
+    global artistPlayedSongsName, artistPlayedSongsLimit
+    cur = con.cursor()
+    artistPlayedSongsWindow = tkinter.Tk()
+    View.destroy()
+    artistPlayedSongsWindow.geometry("700x350")
+    artistPlayedSongsWindow.title("Artist Playback")
+    for i in range(5):
+        artistPlayedSongsWindow.columnconfigure(i,weight=1)
+    space00 = tkinter.Label(artistPlayedSongsWindow, text="").grid(row=0,column=3)
+    windowTitle = tkinter.Label(artistPlayedSongsWindow, text="ARTIST SONG PLAYBACK")
+    windowTitle.config(font=("Helvetica",20,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(artistPlayedSongsWindow, text="").grid(row=2,column=3)
+    subTitle0 = tkinter.Label(artistPlayedSongsWindow, text="Artist Name")
+    subTitle0.config(font=("Helvetica",15,"bold"))
+    subTitle0.grid(row=3,column=2)
+    artistPlayedSongsName = tkinter.Entry(artistPlayedSongsWindow, font="Helvetica 10")
+    artistPlayedSongsName.grid(row=5,column=2)
+    space2 = tkinter.Label(artistPlayedSongsWindow, text="").grid(row=6,column=3)
+    subTitle2 = tkinter.Label(artistPlayedSongsWindow, text="Limit")
+    subTitle2.config(font=("Helvetica",15,"bold"))
+    subTitle2.grid(row=7,column=2)
+    artistPlayedSongsLimit = tkinter.Entry(artistPlayedSongsWindow, font="Helvetica 10")
+    artistPlayedSongsLimit.grid(row=8,column=2)
+    space3 = tkinter.Label(artistPlayedSongsWindow, text="").grid(row=9,column=3)
+    searchBtn = tkinter.Button(artistPlayedSongsWindow, text="Search", padx=15, pady=5, bg="#c8c8c8", command = lambda: showArtistPlayingSongsView(artistPlayedSongsWindow,currentUser))
+    searchBtn.grid(row=10,column=2)
+    space1 = tkinter.Label(artistPlayedSongsWindow, text="").grid(row=11,column=2)
+    backModifyBtn = tkinter.Button(artistPlayedSongsWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(artistPlayedSongsWindow,currentUser))
+    backModifyBtn.grid(row=12,column=2)
+    artistPlayedSongsWindow.mainloop()
+
+def showArtistPlayingSongsView(View,currentUser):
+    cur = con.cursor()
+    showArtistPlayingSongsWindow = tkinter.Tk()
+    showArtistPlayingSongsWindow.geometry("900x400")
+    showArtistPlayingSongsWindow.title("Artist Playback")
+    for i in range(5):
+        showArtistPlayingSongsWindow.columnconfigure(i,weight=1)
+    space00 = tkinter.Label(showArtistPlayingSongsWindow, text="").grid(row=0,column=2)
+    windowTitle = tkinter.Label(showArtistPlayingSongsWindow, text="ARTIST SONG PLAYBACK")
+    windowTitle.config(font=("Helvetica",15,"bold"))
+    windowTitle.grid(row=1,column=2)
+    space0 = tkinter.Label(showArtistPlayingSongsWindow, text="").grid(row=2,column=2)
+    Instruction1 = tkinter.Label(showArtistPlayingSongsWindow,text="Number")
+    Instruction1.config(font=("Helvetica",13,"bold"))
+    Instruction1.grid(row=3,column=1)
+    Instruction2 = tkinter.Label(showArtistPlayingSongsWindow,text="Song")
+    Instruction2.config(font=("Helvetica",13,"bold"))
+    Instruction2.grid(row=3,column=2)
+    Instruction3 = tkinter.Label(showArtistPlayingSongsWindow,text="Playbacks")
+    Instruction3.config(font=("Helvetica",13,"bold"))
+    Instruction3.grid(row=3,column=3)
+    artistName = artistPlayedSongsName.get()
+    limit = artistPlayedSongsLimit.get()
+    limit = int(limit)
+    dictionary = {'SongsArtist':artistName,
+                  'Limit':limit}
+    cur.execute("""select track.name, count(songplayings.playing)
+                from track
+                left join songplayings on songplayings.trackid = track.trackid
+                left join (select album.albumid as ALBUMID, artist.name AS ARTISTNAME
+                from album
+                left join artist on album.artistid = artist.artistid) mid on track.albumid = mid.ALBUMID
+                where mid.ARTISTNAME = %(SongsArtist)s
+                group by track.name
+                order by count(songplayings.playing) desc
+                LIMIT %(Limit)s;""",dictionary)
+    rows = cur.fetchall()
+    i = 4
+    x = 1
+    for r in rows:
+        number = tkinter.Label(showArtistPlayingSongsWindow, text=x)
+        number.config(font=("Helvetica",15))
+        number.grid(row=i,column=1)
+        songname = tkinter.Label(showArtistPlayingSongsWindow,text=r[0])
+        songname.config(font=("Helvetica",15))
+        songname.grid(row=i,column=2)
+        sumatory = tkinter.Label(showArtistPlayingSongsWindow,text=str(r[1]))
+        sumatory.config(font=("Helvetica",15))
+        sumatory.grid(row=i,column=3)
+        i += 1
+        x += 1
+    space1 = tkinter.Label(showArtistPlayingSongsWindow, text="").grid(row=i+1,column=2)
+    csvBtn = tkinter.Button(showArtistPlayingSongsWindow, text="Export To CSV", padx=15, pady=5, bg="#c8c8c8", command = lambda: exportArtistSellingsCSV(rows,currentUser))
+    csvBtn.grid(row=i+2,column=2)
+    space2 = tkinter.Label(showArtistPlayingSongsWindow, text="").grid(row=i+3,column=2)
+    backModifyBtn = tkinter.Button(showArtistPlayingSongsWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(showArtistPlayingSongsWindow,currentUser))
+    backModifyBtn.grid(row=i+4,column=2)
+    View.destroy()
+    showArtistPlayingSongsWindow.mainloop()
 
 ##################################################################################################################
                                                 #Programa

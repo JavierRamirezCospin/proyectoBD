@@ -138,6 +138,7 @@ CREATE TABLE Track
     Milliseconds INT NOT NULL,
     Bytes INT,
     UnitPrice NUMERIC(10,2) NOT NULL,
+    songURL VARCHAR(200),
     CONSTRAINT PK_Track PRIMARY KEY (TrackId),
     FOREIGN KEY (AlbumId) REFERENCES Album (AlbumId) ON DELETE NO ACTION ON UPDATE NO ACTION,
     FOREIGN KEY (GenreId) REFERENCES Genre (GenreId) ON DELETE NO ACTION ON UPDATE NO ACTION,
@@ -175,7 +176,15 @@ CREATE TABLE PlaylistTrack
     FOREIGN KEY (TrackId) REFERENCES Track (TrackId) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
-
+DROP TABLE IF EXISTS SongPlayings;
+CREATE TABLE SongPlayings
+(
+	SongPlayingID INT NOT NULL,
+	TrackId INT NOT NULL,
+	Playing INT NOT NULL,
+	CONSTRAINT PK_SongPlaying PRIMARY KEY (SongPlayingID),
+	FOREIGN KEY (TrackId) REFERENCES Track (TrackId) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
 
 /*******************************************************************************
    Create Primary Key Unique Indexes
@@ -200,6 +209,8 @@ DROP INDEX IF EXISTS IFK_TrackGenreId;
 CREATE INDEX IFK_TrackGenreId ON Track (GenreId);
 DROP INDEX IF EXISTS IFK_TrackMediaTypeId;
 CREATE INDEX IFK_TrackMediaTypeId ON Track (MediaTypeId);
+DROP INDEX IF EXISTS IFK_SongPlayingsId;
+CREATE INDEX IFK_SongPlayingsId ON SongPlayings (SongPlayingID);
 
 /*******************************************************************************
    Populate Tables
@@ -905,56 +916,56 @@ INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (345,'Monteverdi: L''Orfeo',
 INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (346,'Mozart: Chamber Music', 274);
 INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (347,'Koyaanisqatsi (Soundtrack from the Motion Picture)', 275);
 
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (1,'For Those About To Rock (We Salute You)', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 343719, 11170334, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Milliseconds, Bytes, UnitPrice) VALUES (2,'Balls to the Wall', 2, 2, 1, 342562, 5510424, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (3,'Fast As a Shark', 3, 2, 1,'F. Baltes, S. Kaufman, U. Dirkscneider & W. Hoffman', 230619, 3990994, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (4,'Restless and Wild', 3, 2, 1,'F. Baltes, R.A. Smith-Diesel, S. Kaufman, U. Dirkscneider & W. Hoffman', 252051, 4331779, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (5,'Princess of the Dawn', 3, 2, 1,'Deaffy & R.A. Smith-Diesel', 375418, 6290521, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (6,'Put The Finger On You', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 205662, 6713451, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (7,'Let''s Get It Up', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 233926, 7636561, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (8,'Inject The Venom', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 210834, 6852860, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (9,'Snowballed', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 203102, 6599424, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (10,'Evil Walks', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 263497, 8611245, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (11,'C.O.D.', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 199836, 6566314, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (12,'Breaking The Rules', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 263288, 8596840, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (13,'Night Of The Long Knives', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 205688, 6706347, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (14,'Spellbound', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 270863, 8817038, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (15,'Go Down', 4, 1, 1,'AC/DC', 331180, 10847611, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (16,'Dog Eat Dog', 4, 1, 1,'AC/DC', 215196, 7032162, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (17,'Let There Be Rock', 4, 1, 1,'AC/DC', 366654, 12021261, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (18,'Bad Boy Boogie', 4, 1, 1,'AC/DC', 267728, 8776140, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (19,'Problem Child', 4, 1, 1,'AC/DC', 325041, 10617116, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (20,'Overdose', 4, 1, 1,'AC/DC', 369319, 12066294, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (21,'Hell Ain''t A Bad Place To Be', 4, 1, 1,'AC/DC', 254380, 8331286, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (22,'Whole Lotta Rosie', 4, 1, 1,'AC/DC', 323761, 10547154, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (23,'Walk On Water', 5, 1, 1,'Steven Tyler, Joe Perry, Jack Blades, Tommy Shaw', 295680, 9719579, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (24,'Love In An Elevator', 5, 1, 1,'Steven Tyler, Joe Perry', 321828, 10552051, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (25,'Rag Doll', 5, 1, 1,'Steven Tyler, Joe Perry, Jim Vallance, Holly Knight', 264698, 8675345, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (26,'What It Takes', 5, 1, 1,'Steven Tyler, Joe Perry, Desmond Child', 310622, 10144730, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (27,'Dude (Looks Like A Lady)', 5, 1, 1,'Steven Tyler, Joe Perry, Desmond Child', 264855, 8679940, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (28,'Janie''s Got A Gun', 5, 1, 1,'Steven Tyler, Tom Hamilton', 330736, 10869391, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (29,'Cryin''', 5, 1, 1,'Steven Tyler, Joe Perry, Taylor Rhodes', 309263, 10056995, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (30,'Amazing', 5, 1, 1,'Steven Tyler, Richie Supa', 356519, 11616195, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (31,'Blind Man', 5, 1, 1,'Steven Tyler, Joe Perry, Taylor Rhodes', 240718, 7877453, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (32,'Deuces Are Wild', 5, 1, 1,'Steven Tyler, Jim Vallance', 215875, 7074167, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (33,'The Other Side', 5, 1, 1,'Steven Tyler, Jim Vallance', 244375, 7983270, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (34,'Crazy', 5, 1, 1,'Steven Tyler, Joe Perry, Desmond Child', 316656, 10402398, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (35,'Eat The Rich', 5, 1, 1,'Steven Tyler, Joe Perry, Jim Vallance', 251036, 8262039, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (36,'Angel', 5, 1, 1,'Steven Tyler, Desmond Child', 307617, 9989331, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (37,'Livin'' On The Edge', 5, 1, 1,'Steven Tyler, Joe Perry, Mark Hudson', 381231, 12374569, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (38,'All I Really Want', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 284891, 9375567, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (39,'You Oughta Know', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 249234, 8196916, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (40,'Perfect', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 188133, 6145404, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (41,'Hand In My Pocket', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 221570, 7224246, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (42,'Right Through You', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 176117, 5793082, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (43,'Forgiven', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 300355, 9753256, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (44,'You Learn', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 239699, 7824837, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (45,'Head Over Feet', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 267493, 8758008, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (46,'Mary Jane', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 280607, 9163588, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (47,'Ironic', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 229825, 7598866, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (48,'Not The Doctor', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 227631, 7604601, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (49,'Wake Up', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 293485, 9703359, 0.99);
-INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (50,'You Oughta Know (Alternate)', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 491885, 16008629, 0.99);
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (1,'For Those About To Rock (We Salute You)', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 343719, 11170334, 0.99,'https://www.youtube.com/watch?v=8fPf6L0XNvM');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Milliseconds, Bytes, UnitPrice, songURL) VALUES (2,'Balls to the Wall', 2, 2, 1, 342562, 5510424, 0.99,'https://www.youtube.com/watch?v=B_3TlrZLpQ0');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (3,'Fast As a Shark', 3, 2, 1,'F. Baltes, S. Kaufman, U. Dirkscneider & W. Hoffman', 230619, 3990994, 0.99,'https://www.youtube.com/watch?v=tTeXBTStek0');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (4,'Restless and Wild', 3, 2, 1,'F. Baltes, R.A. Smith-Diesel, S. Kaufman, U. Dirkscneider & W. Hoffman', 252051, 4331779, 0.99,'https://www.youtube.com/watch?v=WsrWiyBVzHo');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (5,'Princess of the Dawn', 3, 2, 1,'Deaffy & R.A. Smith-Diesel', 375418, 6290521, 0.99,'https://www.youtube.com/watch?v=K8C-DP18-6g');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (6,'Put The Finger On You', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 205662, 6713451, 0.99,'https://www.youtube.com/watch?v=0S6bthC2AHM');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (7,'Let''s Get It Up', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 233926, 7636561, 0.99,'https://www.youtube.com/watch?v=Jq9r4-xvunk');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (8,'Inject The Venom', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 210834, 6852860, 0.99,'https://www.youtube.com/watch?v=CU4EA03ywus');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (9,'Snowballed', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 203102, 6599424, 0.99,'https://www.youtube.com/watch?v=hOeeya8ttS4');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (10,'Evil Walks', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 263497, 8611245, 0.99,'https://www.youtube.com/watch?v=sbgKLgK1ny0');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (11,'C.O.D.', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 199836, 6566314, 0.99,'https://www.youtube.com/watch?v=IGProeZThj0');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (12,'Breaking The Rules', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 263288, 8596840, 0.99,'https://www.youtube.com/watch?v=75OxuXHhYJI');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (13,'Night Of The Long Knives', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 205688, 6706347, 0.99,'https://www.youtube.com/watch?v=LR3nXuBwGcI');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (14,'Spellbound', 1, 1, 1,'Angus Young, Malcolm Young, Brian Johnson', 270863, 8817038, 0.99,'https://www.youtube.com/watch?v=ghWH_un3Q5g');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (15,'Go Down', 4, 1, 1,'AC/DC', 331180, 10847611, 0.99,'https://www.youtube.com/watch?v=t9DWwoey1K0');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (16,'Dog Eat Dog', 4, 1, 1,'AC/DC', 215196, 7032162, 0.99,'https://www.youtube.com/watch?v=F8kjqWCCXvU');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (17,'Let There Be Rock', 4, 1, 1,'AC/DC', 366654, 12021261, 0.99,'https://www.youtube.com/watch?v=3f2g4RMfhS0');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (18,'Bad Boy Boogie', 4, 1, 1,'AC/DC', 267728, 8776140, 0.99,'https://www.youtube.com/watch?v=lykP9Opw1Ok');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (19,'Problem Child', 4, 1, 1,'AC/DC', 325041, 10617116, 0.99,'https://www.youtube.com/watch?v=S4uwi5cUyco');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (20,'Overdose', 4, 1, 1,'AC/DC', 369319, 12066294, 0.99,'https://www.youtube.com/watch?v=YDY6fzBvWtE');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (21,'Hell Ain''t A Bad Place To Be', 4, 1, 1,'AC/DC', 254380, 8331286, 0.99,'https://www.youtube.com/watch?v=qNfpkK5Uzqg');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (22,'Whole Lotta Rosie', 4, 1, 1,'AC/DC', 323761, 10547154, 0.99,'https://www.youtube.com/watch?v=bAOwDZoWXRI');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (23,'Walk On Water', 5, 1, 1,'Steven Tyler, Joe Perry, Jack Blades, Tommy Shaw', 295680, 9719579, 0.99,'https://www.youtube.com/watch?v=GkZ04Tld_u4');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (24,'Love In An Elevator', 5, 1, 1,'Steven Tyler, Joe Perry', 321828, 10552051, 0.99,'https://www.youtube.com/watch?v=rgmDffH8jTk');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (25,'Rag Doll', 5, 1, 1,'Steven Tyler, Joe Perry, Jim Vallance, Holly Knight', 264698, 8675345, 0.99,'https://www.youtube.com/watch?v=rQU70EkGC6E');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (26,'What It Takes', 5, 1, 1,'Steven Tyler, Joe Perry, Desmond Child', 310622, 10144730, 0.99,'https://www.youtube.com/watch?v=CSnuQcFgvDo');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (27,'Dude (Looks Like A Lady)', 5, 1, 1,'Steven Tyler, Joe Perry, Desmond Child', 264855, 8679940, 0.99,'https://www.youtube.com/watch?v=nf0oXY4nDxE');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (28,'Janie''s Got A Gun', 5, 1, 1,'Steven Tyler, Tom Hamilton', 330736, 10869391, 0.99,'https://www.youtube.com/watch?v=K741isUnoNA');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (29,'Cryin''', 5, 1, 1,'Steven Tyler, Joe Perry, Taylor Rhodes', 309263, 10056995, 0.99,'https://www.youtube.com/watch?v=qfNmyxV2Ncw');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (30,'Amazing', 5, 1, 1,'Steven Tyler, Richie Supa', 356519, 11616195, 0.99,'https://www.youtube.com/watch?v=zSmOvYzSeaQ');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (31,'Blind Man', 5, 1, 1,'Steven Tyler, Joe Perry, Taylor Rhodes', 240718, 7877453, 0.99,'https://www.youtube.com/watch?v=B0JLFcbtqvs');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (32,'Deuces Are Wild', 5, 1, 1,'Steven Tyler, Jim Vallance', 215875, 7074167, 0.99,'https://www.youtube.com/watch?v=uTJVS44qudo');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (33,'The Other Side', 5, 1, 1,'Steven Tyler, Jim Vallance', 244375, 7983270, 0.99,'https://www.youtube.com/watch?v=zkGfPrst29Y');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (34,'Crazy', 5, 1, 1,'Steven Tyler, Joe Perry, Desmond Child', 316656, 10402398, 0.99,'https://www.youtube.com/watch?v=NMNgbISmF4I');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (35,'Eat The Rich', 5, 1, 1,'Steven Tyler, Joe Perry, Jim Vallance', 251036, 8262039, 0.99,'https://www.youtube.com/watch?v=1-0NOGJDRtU');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (36,'Angel', 5, 1, 1,'Steven Tyler, Desmond Child', 307617, 9989331, 0.99,'https://www.youtube.com/watch?v=CBTOGVb_cQg');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (37,'Livin'' On The Edge', 5, 1, 1,'Steven Tyler, Joe Perry, Mark Hudson', 381231, 12374569, 0.99,'https://www.youtube.com/watch?v=TuCGiV-EVjA');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (38,'All I Really Want', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 284891, 9375567, 0.99,'https://www.youtube.com/watch?v=HLHvb9V8Yzs');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (39,'You Oughta Know', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 249234, 8196916, 0.99,'https://www.youtube.com/watch?v=NPcyTyilmYY');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (40,'Perfect', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 188133, 6145404, 0.99,'https://www.youtube.com/watch?v=i9WIM2zZ2nI');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (41,'Hand In My Pocket', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 221570, 7224246, 0.99,'https://www.youtube.com/watch?v=CUjIY_XxF1g');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (42,'Right Through You', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 176117, 5793082, 0.99,'https://www.youtube.com/watch?v=1hm7w5RmA0Y');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (43,'Forgiven', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 300355, 9753256, 0.99,'https://www.youtube.com/watch?v=-9DnL-TlyJw');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (44,'You Learn', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 239699, 7824837, 0.99,'https://www.youtube.com/watch?v=GFW-WfuX2Dk');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (45,'Head Over Feet', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 267493, 8758008, 0.99,'https://www.youtube.com/watch?v=4iuO49jbovg');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (46,'Mary Jane', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 280607, 9163588, 0.99,'https://www.youtube.com/watch?v=HYHx5NlUlZk');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (47,'Ironic', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 229825, 7598866, 0.99,'https://www.youtube.com/watch?v=Jne9t8sHpUc');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (48,'Not The Doctor', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 227631, 7604601, 0.99,'https://www.youtube.com/watch?v=JesduDk4RHs');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (49,'Wake Up', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 293485, 9703359, 0.99,'https://www.youtube.com/watch?v=4dN0SK_yx2A');
+INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice, songURL) VALUES (50,'You Oughta Know (Alternate)', 6, 1, 1,'Alanis Morissette & Glenn Ballard', 491885, 16008629, 0.99,'https://www.youtube.com/watch?v=Y7Teatp7oOI');
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (51,'We Die Young', 7, 1, 1,'Jerry Cantrell', 152084, 4925362, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (52,'Man In The Box', 7, 1, 1,'Jerry Cantrell, Layne Staley', 286641, 9310272, 0.99);
 INSERT INTO Track (TrackId, Name, AlbumId, MediaTypeId, GenreId, Composer, Milliseconds, Bytes, UnitPrice) VALUES (53,'Sea Of Sorrow', 7, 1, 1,'Jerry Cantrell', 349831, 11316328, 0.99);
@@ -15866,3 +15877,9 @@ INSERT INTO PlaylistTrack (PlaylistId, TrackId) VALUES (17, 2095);
 INSERT INTO PlaylistTrack (PlaylistId, TrackId) VALUES (17, 2096);
 INSERT INTO PlaylistTrack (PlaylistId, TrackId) VALUES (17, 3290);
 INSERT INTO PlaylistTrack (PlaylistId, TrackId) VALUES (18, 597);
+
+ALTER TABLE Track
+ADD COLUMN activa INT;
+
+UPDATE Track
+SET activa = 1;
