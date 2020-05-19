@@ -1,6 +1,6 @@
 import tkinter
 from tkinter import font
-import pymongo
+from pymongo import *
 import webbrowser
 import psycopg2
 import random
@@ -650,6 +650,25 @@ def pdfGenerator(currentUser,songsList,totalprice):
         cur.close()
     except:
         print("\n-> PDF File Generation Failed!")
+
+def searchClients(currentUser):
+    try:
+        cur = con.cursor()
+        date = searchByDate.get()
+        dictionary = {'Date':date}
+        cur.execute("""select invoice.customerid, invoice.invoicedate, invoiceline.trackid
+            from invoiceline
+            left join invoice on invoice.invoiceid = invoiceline.invoiceid
+            where invoice.invoicedate = %(Date)s;""",dictionary)
+        clients = cur.fetchall()
+        collectionName = 'clients-'+date[:4]
+        collection = db[collectionName]
+        for client in clients:
+            clien = db.collection.insert_many({"ClientID":client[0],"InvoiceDate":client[1],"TrackID":client[2]})
+        cur.close()
+        print("\n-> CSV File Generated Succesfully!")
+    except:
+        print("\n-> CSV File Generation Unsuccessful!")
     
 def registerUser(con):
     try:
@@ -883,7 +902,7 @@ def registerView(View):
 def loginView(con):
     global userEntry, passwordEntry
     window = tkinter.Tk()
-    window.geometry("750x800")
+    window.geometry("650x700")
     window.title("Login Page")
     appTitle = "WHATEVS"
     space00 = tkinter.Label(window, text="")
@@ -939,7 +958,7 @@ def customer1View(currentUser):
     space00 = tkinter.Label(customer1View, text="").grid(row=0,column=3)
     showUser = tkinter.Label(customer1View, text="Welcome " + currentUser['name'].title() + "!")
     showUser.grid(row=1,column=1)
-    showUser.config(font=("Helvetica", 20, "bold"))
+    showUser.config(font=("Helvetica", 23, "bold"))
     showUserType = tkinter.Label(customer1View, text="User type: Costumer " + currentUser['type'])
     showUserType.grid(row=2,column=1)
     showUserType.config(font=("Helvetica", 20, "bold"))
@@ -971,6 +990,16 @@ def customer1View(currentUser):
     space4 = tkinter.Label(customer1View, text="").grid(row=5,column=3)
     purchaseSongs = tkinter.Button(customer1View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(customer1View,currentUser))
     purchaseSongs.grid(row=6,column=3)
+    purchaseSongs = tkinter.Button(customer1View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(customer1View,currentUser))
+    purchaseSongs.grid(row=6,column=3)
+    salesPerWeekBtn = tkinter.Button(customer1View, text="Sales per Week",width=20,height=1, command = lambda: listenSongsAdminView(customer1View,currentUser))
+    salesPerWeekBtn.grid(row=4,column=4)
+    salesPerArtist = tkinter.Button(customer1View, text="Sales per Artist",width=20,height=1, command = lambda: listenSongsAdminView(customer1View,currentUser))
+    salesPerArtist.grid(row=6,column=4)
+    salesPerGenre = tkinter.Button(customer1View, text="Sales per Genre",width=20,height=1, command = lambda: listenSongsAdminView(customer1View,currentUser))
+    salesPerGenre.grid(row=8,column=4)
+    artistPlaybackBtn = tkinter.Button(customer1View, text="Artist Playback",width=20,height=1, command = lambda: listenSongsAdminView(customer1View,currentUser))
+    artistPlaybackBtn.grid(row=10,column=4)
     space1 = tkinter.Label(customer1View, text="").grid(row=7,column=1)
     space2 = tkinter.Label(customer1View, text="").grid(row=8,column=1)
     space3 = tkinter.Label(customer1View, text="").grid(row=9,column=1)
@@ -1032,6 +1061,14 @@ def customer2View(currentUser):
     space4 = tkinter.Label(customer2View, text="").grid(row=5,column=3)
     purchaseSongs = tkinter.Button(customer2View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(customer2View,currentUser))
     purchaseSongs.grid(row=6,column=3)
+    salesPerWeekBtn = tkinter.Button(customer2View, text="Sales per Week",width=20,height=1, command = lambda: listenSongsAdminView(customer2View,currentUser))
+    salesPerWeekBtn.grid(row=4,column=4)
+    salesPerArtist = tkinter.Button(customer2View, text="Sales per Artist",width=20,height=1, command = lambda: listenSongsAdminView(customer2View,currentUser))
+    salesPerArtist.grid(row=6,column=4)
+    salesPerGenre = tkinter.Button(customer2View, text="Sales per Genre",width=20,height=1, command = lambda: listenSongsAdminView(customer2View,currentUser))
+    salesPerGenre.grid(row=8,column=4)
+    artistPlaybackBtn = tkinter.Button(customer2View, text="Artist Playback",width=20,height=1, command = lambda: listenSongsAdminView(customer2View,currentUser))
+    artistPlaybackBtn.grid(row=10,column=4)
     space0 = tkinter.Label(customer2View, text="").grid(row=10,column=1)
     space0 = tkinter.Label(customer2View, text="").grid(row=11,column=1)
     space0 = tkinter.Label(customer2View, text="").grid(row=12,column=1)
@@ -1095,6 +1132,14 @@ def customer3View(currentUser):
     space4 = tkinter.Label(customer3View, text="").grid(row=5,column=3)
     purchaseSongs = tkinter.Button(customer3View, text="Purchase Songs",width=20,height=1, command = lambda: purchaseSongsView(customer3View,currentUser))
     purchaseSongs.grid(row=6,column=3)
+    salesPerWeekBtn = tkinter.Button(customer3View, text="Sales per Week",width=20,height=1, command = lambda: listenSongsAdminView(customer3View,currentUser))
+    salesPerWeekBtn.grid(row=4,column=4)
+    salesPerArtist = tkinter.Button(customer3View, text="Sales per Artist",width=20,height=1, command = lambda: listenSongsAdminView(customer3View,currentUser))
+    salesPerArtist.grid(row=6,column=4)
+    salesPerGenre = tkinter.Button(customer3View, text="Sales per Genre",width=20,height=1, command = lambda: listenSongsAdminView(customer3View,currentUser))
+    salesPerGenre.grid(row=8,column=4)
+    artistPlaybackBtn = tkinter.Button(customer3View, text="Artist Playback",width=20,height=1, command = lambda: listenSongsAdminView(customer3View,currentUser))
+    artistPlaybackBtn.grid(row=10,column=4)
     space0 = tkinter.Label(customer3View, text="").grid(row=15,column=1)
     space0 = tkinter.Label(customer3View, text="").grid(row=16,column=1)
     space0 = tkinter.Label(customer3View, text="").grid(row=17,column=1)
@@ -1104,7 +1149,7 @@ def customer3View(currentUser):
     
 def adminView(currentUser):
     adminWindow = tkinter.Tk()
-    adminWindow.geometry("1250x800")
+    adminWindow.geometry("1250x700")
     adminWindow.title("Admin View")
     for i in range(7):
         adminWindow.columnconfigure(i,weight=1)
@@ -1169,8 +1214,22 @@ def adminView(currentUser):
     space6 = tkinter.Label(adminWindow, text="").grid(row=9,column=3)
     purchaseSimulator = tkinter.Button(adminWindow, text="Purchase Simulator",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
     purchaseSimulator.grid(row=10,column=3)
+    promotion = tkinter.Button(adminWindow, text="Promotion",width=20,height=1, command = lambda: promotionView(adminWindow,currentUser))
+    promotion.grid(row=12,column=3)
+    intelligence = tkinter.Button(adminWindow, text="Intelligence",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
+    intelligence.grid(row=14,column=3)
+    salesPerWeekBtn = tkinter.Button(adminWindow, text="Sales per Week",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
+    salesPerWeekBtn.grid(row=4,column=4)
+    salesPerArtist = tkinter.Button(adminWindow, text="Sales per Artist",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
+    salesPerArtist.grid(row=6,column=4)
+    salesPerGenre = tkinter.Button(adminWindow, text="Sales per Genre",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
+    salesPerGenre.grid(row=8,column=4)
+    artistPlaybackBtn = tkinter.Button(adminWindow, text="Artist Playback",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
+    artistPlaybackBtn.grid(row=10,column=4)
+    space8 = tkinter.Label(adminWindow, text="").grid(row=18,column=1)
+    space9 = tkinter.Label(adminWindow, text="").grid(row=19,column=1)
     logoutBtn = tkinter.Button(adminWindow, text="LOGOUT", width=20, height=1, bg="#ff9999", command = lambda: logOut(adminWindow,currentUser))
-    logoutBtn.grid(row=18,column=1)
+    logoutBtn.grid(row=20,column=1)
     adminWindow.mainloop()
 
 def newArtistView(View,currentUser):
@@ -2217,7 +2276,7 @@ def purchaseSongsView(View,currentUser):
     purchaseSongs = tkinter.Tk()
     View.destroy()
     purchaseSongs.geometry("1000x350")
-    purchaseSongs.title("D")
+    purchaseSongs.title("Purchase Songs")
     wishlist = []
     for i in range(5):
         purchaseSongs.columnconfigure(i,weight=1)
@@ -2249,7 +2308,7 @@ def checkoutView(View,currentUser,wishlist):
     checkoutView = tkinter.Tk()
     View.destroy()
     checkoutView.geometry("1000x550")
-    checkoutView.title("D")
+    checkoutView.title("Checkout")
     for i in range(5):
         checkoutView.columnconfigure(i,weight=1)
     space00 = tkinter.Label(checkoutView, text="").grid(row=0,column=3)
@@ -2303,13 +2362,38 @@ def checkoutView(View,currentUser,wishlist):
     buySongsBtn.grid(row=i+6,column=2)
     checkoutView.mainloop()
 
+def promotionView(View,currentUser):
+    global searchByDate
+    promotionWindow = tkinter.Tk()
+    View.destroy()
+    promotionWindow.geometry("650x350")
+    promotionWindow.title("Promotion")
+    space0 = tkinter.Label(promotionWindow, text="").pack()
+    windowTitle = tkinter.Label(promotionWindow, text="PROMOTION")
+    windowTitle.config(font=("Helvetica",23,"bold"))
+    windowTitle.pack()
+    space1 = tkinter.Label(promotionWindow, text="").pack()
+    Instruction1 = tkinter.Label(promotionWindow,text="Date")
+    Instruction1.config(font=("Helvetica",13,"bold"))
+    Instruction1.pack()
+    Instruction2 = tkinter.Label(promotionWindow,text="YYYY-MM-DD")
+    Instruction2.config(font=("Helvetica",13))
+    Instruction2.pack()
+    searchByDate = tkinter.Entry(promotionWindow, font="Helvetica 10")
+    searchByDate.pack()
+    space3 = tkinter.Label(promotionWindow, text="").pack()
+    searchBtn = tkinter.Button(promotionWindow, text="Search", padx=15, pady=5, bg="#c8c8c8", command = lambda: searchClients(currentUser)).pack()
+    space2 = tkinter.Label(promotionWindow, text="").pack()
+    backModifyBtn = tkinter.Button(promotionWindow, text="Back", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(promotionWindow,currentUser)).pack()
+    promotionWindow.mainloop()
+
 ##################################################################################################################
                                                 #Programa
 ##################################################################################################################
     
 try:
     global con
-    print("->Connecting to DB...")
+    print("\n->Connecting to DB...")
     con = psycopg2.connect(
         host = "127.0.0.1",
         database = "proyecto1",
@@ -2318,6 +2402,11 @@ try:
         port = 5432
     )
     print("->Connected Succesfully to DB!")
+    print("\n->Connecting to Mongo DB...")
+    MONGO_URI = 'mongodb://localhost'
+    client = MongoClient(MONGO_URI)
+    db = client['ProyectoBD']
+    print("->Connected Succesfully to Mongo DB!")
     loginView(con)
 except:
     print("->Connection to Database failed!")
