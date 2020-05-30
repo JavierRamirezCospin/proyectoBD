@@ -37,47 +37,98 @@ $$
 $$
 LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION track_update_bitacora()
+CREATE OR REPLACE FUNCTION track_update_insert_bitacora()
   RETURNS TRIGGER AS
 $$
 DECLARE nao TIMESTAMP;
 DECLARE usn VARCHAR(30);
 DECLARE pos INT;
-DECLARE mod_id INT;
+
     BEGIN
         SELECT NOW() INTO nao;
-        SELECT trackid from track where trackid= OLD.TrackId INTO mod_id;
-        -- mod_id = OLD.TrackId;
         SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
-        IF (TG_OP = 'DELETE') THEN
-            UPDATE bitacora SET verb = 'DELETE', modified = 'TRACK', modified_id = mod_id, modify_date = nao WHERE _id = pos;
-            EXECUTE add_user_to_bitacora(usn);
-            RETURN NEW;
 
-        ELSIF (TG_OP = 'UPDATE') THEN
-            UPDATE bitacora SET verb = 'EDIT', modified = 'TRACK', modified_id = mod_id, modify_date = nao WHERE _id = pos;
+        IF (TG_OP = 'UPDATE') THEN
+        -- old y new
+            
+            UPDATE bitacora SET verb = 'EDIT', modified = 'TRACK', modified_id = OLD.trackId, modify_date = nao WHERE _id = pos;
             EXECUTE add_user_to_bitacora(usn);
             RETURN NEW;
 
         ELSIF (TG_OP = 'INSERT') THEN
-            UPDATE bitacora SET verb = 'CREATE', modified = 'TRACK', modified_id = mod_id, modify_date = nao WHERE _id = pos;
+        -- no old
+            RAISE NOTICE 'NEW in INSERT: %', NEW.trackId;
+            
+            UPDATE bitacora SET verb = 'CREATE', modified = 'TRACK', modified_id = NEW.trackId, modify_date = nao WHERE _id = pos;
             EXECUTE add_user_to_bitacora(usn);
             RETURN NEW;
         END IF;
-        -- RETURN NEW;
     END;
 $$
 LANGUAGE plpgsql;
 
-CREATE TRIGGER track_bitacora_trigger 
-    BEFORE UPDATE OR INSERT OR DELETE ON track 
-    EXECUTE PROCEDURE track_update_bitacora();
+CREATE TRIGGER track_bitacora_trigger_up_ins
+    BEFORE UPDATE OR INSERT ON track 
+    FOR EACH ROW EXECUTE PROCEDURE track_update_insert_bitacora();
 
-UPDATE track SET Composer = 'Johnny' WHERE TrackId = 2;
+CREATE OR REPLACE FUNCTION track_delete_bitacora()
+  RETURNS TRIGGER AS
+$$
+DECLARE nao TIMESTAMP;
+DECLARE usn VARCHAR(30);
+DECLARE pos INT;
+    BEGIN
+        SELECT NOW() INTO nao;
+        SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
+		UPDATE bitacora SET verb = 'DELETE', modified = 'TRACK', modified_id = OLD.trackid, modify_date = nao WHERE _id = pos;
+		EXECUTE add_user_to_bitacora(usn);
+		RETURN OLD;
+    END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER track_bitacora_trigger_del 
+    BEFORE DELETE ON track 
+    FOR EACH ROW EXECUTE PROCEDURE track_delete_bitacora();
+
+-- UPDATE track SET Composer = 'Johnny' WHERE TrackId = 2;
 
 -- ARTIST
 
-CREATE OR REPLACE FUNCTION artist_update_bitacora()
+CREATE OR REPLACE FUNCTION artist_update_insert_bitacora()
+  RETURNS TRIGGER AS
+$$
+DECLARE nao TIMESTAMP;
+DECLARE usn VARCHAR(30);
+DECLARE pos INT;
+
+    BEGIN
+        SELECT NOW() INTO nao;
+        SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
+
+        IF (TG_OP = 'UPDATE') THEN
+        -- old y new
+            
+            UPDATE bitacora SET verb = 'EDIT', modified = 'ARTIST', modified_id = OLD.artistId, modify_date = nao WHERE _id = pos;
+            EXECUTE add_user_to_bitacora(usn);
+            RETURN NEW;
+
+        ELSIF (TG_OP = 'INSERT') THEN
+        -- no old
+            
+            UPDATE bitacora SET verb = 'CREATE', modified = 'ARTIST', modified_id = NEW.artistId, modify_date = nao WHERE _id = pos;
+            EXECUTE add_user_to_bitacora(usn);
+            RETURN NEW;
+        END IF;
+    END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER artist_bitacora_trigger_up_ins
+    BEFORE UPDATE OR INSERT ON artist 
+    FOR EACH ROW EXECUTE PROCEDURE artist_update_insert_bitacora();
+
+CREATE OR REPLACE FUNCTION artist_delete_bitacora()
   RETURNS TRIGGER AS
 $$
 DECLARE nao TIMESTAMP;
@@ -86,35 +137,53 @@ DECLARE pos INT;
     BEGIN
         SELECT NOW() INTO nao;
         SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
-        IF (TG_OP = 'DELETE') THEN
-            UPDATE bitacora SET verb = 'DELETE', modified = 'ARTIST', modify_date = nao WHERE _id = pos;
-            EXECUTE add_user_to_bitacora(usn);
-            RETURN NEW;
-
-        ELSIF (TG_OP = 'UPDATE') THEN
-            UPDATE bitacora SET verb = 'EDIT', modified = 'ARTIST', modify_date = nao WHERE _id = pos;
-            EXECUTE add_user_to_bitacora(usn);
-            RETURN NEW;
-
-        ELSIF (TG_OP = 'INSERT') THEN
-            UPDATE bitacora SET verb = 'CREATE', modified = 'ARTIST', modify_date = nao WHERE _id = pos;
-            EXECUTE add_user_to_bitacora(usn);
-            RETURN NEW;
-        END IF;
-        -- RETURN NEW;
+		UPDATE bitacora SET verb = 'DELETE', modified = 'ARTIST', modified_id = OLD.artistId, modify_date = nao WHERE _id = pos;
+		EXECUTE add_user_to_bitacora(usn);
+		RETURN OLD;
     END;
 $$
 LANGUAGE plpgsql;
 
-CREATE TRIGGER artist_bitacora_trigger 
-    BEFORE UPDATE OR INSERT OR DELETE ON artist 
-    EXECUTE PROCEDURE artist_update_bitacora();
-
-
+CREATE TRIGGER artist_bitacora_trigger_del 
+    BEFORE DELETE ON artist 
+    FOR EACH ROW EXECUTE PROCEDURE artist_delete_bitacora();
 
 -- ALBUM
 
-CREATE OR REPLACE FUNCTION album_update_bitacora()
+CREATE OR REPLACE FUNCTION album_update_insert_bitacora()
+  RETURNS TRIGGER AS
+$$
+DECLARE nao TIMESTAMP;
+DECLARE usn VARCHAR(30);
+DECLARE pos INT;
+
+    BEGIN
+        SELECT NOW() INTO nao;
+        SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
+
+        IF (TG_OP = 'UPDATE') THEN
+        -- old y new
+            
+            UPDATE bitacora SET verb = 'EDIT', modified = 'ALBUM', modified_id = OLD.albumId, modify_date = nao WHERE _id = pos;
+            EXECUTE add_user_to_bitacora(usn);
+            RETURN NEW;
+
+        ELSIF (TG_OP = 'INSERT') THEN
+        -- no old
+            
+            UPDATE bitacora SET verb = 'CREATE', modified = 'ALBUM', modified_id = NEW.albumId, modify_date = nao WHERE _id = pos;
+            EXECUTE add_user_to_bitacora(usn);
+            RETURN NEW;
+        END IF;
+    END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER album_bitacora_trigger_up_ins
+    BEFORE UPDATE OR INSERT ON album 
+    FOR EACH ROW EXECUTE PROCEDURE album_update_insert_bitacora();
+
+CREATE OR REPLACE FUNCTION album_delete_bitacora()
   RETURNS TRIGGER AS
 $$
 DECLARE nao TIMESTAMP;
@@ -123,34 +192,54 @@ DECLARE pos INT;
     BEGIN
         SELECT NOW() INTO nao;
         SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
-        IF (TG_OP = 'DELETE') THEN
-            UPDATE bitacora SET verb = 'DELETE', modified = 'ALBUM', modify_date = nao WHERE _id = pos;
-            EXECUTE add_user_to_bitacora(usn);
-            RETURN NEW;
-
-        ELSIF (TG_OP = 'UPDATE') THEN
-            UPDATE bitacora SET verb = 'EDIT', modified = 'ALBUM', modify_date = nao WHERE _id = pos;
-            EXECUTE add_user_to_bitacora(usn);
-            RETURN NEW;
-
-        ELSIF (TG_OP = 'INSERT') THEN
-            UPDATE bitacora SET verb = 'CREATE', modified = 'ALBUM', modify_date = nao WHERE _id = pos;
-            EXECUTE add_user_to_bitacora(usn);
-            RETURN NEW;
-        END IF;
-        -- RETURN NEW;
+		UPDATE bitacora SET verb = 'DELETE', modified = 'ALBUM', modified_id = OLD.albumId, modify_date = nao WHERE _id = pos;
+		EXECUTE add_user_to_bitacora(usn);
+		RETURN OLD;
     END;
 $$
 LANGUAGE plpgsql;
 
-CREATE TRIGGER album_bitacora_trigger 
-    BEFORE UPDATE OR INSERT OR DELETE ON album 
-    EXECUTE PROCEDURE album_update_bitacora();
+CREATE TRIGGER album_bitacora_trigger_del 
+    BEFORE DELETE ON album 
+    FOR EACH ROW EXECUTE PROCEDURE album_delete_bitacora();
 
 
 -- PLAYLIST
 
-CREATE OR REPLACE FUNCTION playlist_update_bitacora()
+CREATE OR REPLACE FUNCTION playlist_update_insert_bitacora()
+  RETURNS TRIGGER AS
+$$
+DECLARE nao TIMESTAMP;
+DECLARE usn VARCHAR(30);
+DECLARE pos INT;
+
+    BEGIN
+        SELECT NOW() INTO nao;
+        SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
+
+        IF (TG_OP = 'UPDATE') THEN
+        -- old y new
+            
+            UPDATE bitacora SET verb = 'EDIT', modified = 'PLAYLIST', modified_id = OLD.playlistId, modify_date = nao WHERE _id = pos;
+            EXECUTE add_user_to_bitacora(usn);
+            RETURN NEW;
+
+        ELSIF (TG_OP = 'INSERT') THEN
+        -- no old
+            
+            UPDATE bitacora SET verb = 'CREATE', modified = 'PLAYLIST', modified_id = NEW.playlistId, modify_date = nao WHERE _id = pos;
+            EXECUTE add_user_to_bitacora(usn);
+            RETURN NEW;
+        END IF;
+    END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER playlist_bitacora_trigger_up_ins
+    BEFORE UPDATE OR INSERT ON playlist 
+    FOR EACH ROW EXECUTE PROCEDURE playlist_update_insert_bitacora();
+
+CREATE OR REPLACE FUNCTION playlist_delete_bitacora()
   RETURNS TRIGGER AS
 $$
 DECLARE nao TIMESTAMP;
@@ -159,26 +248,13 @@ DECLARE pos INT;
     BEGIN
         SELECT NOW() INTO nao;
         SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
-        IF (TG_OP = 'DELETE') THEN
-            UPDATE bitacora SET verb = 'DELETE', modified = 'PLAYLIST', modify_date = nao WHERE _id = pos;
-            EXECUTE add_user_to_bitacora(usn);
-            RETURN NEW;
-
-        ELSIF (TG_OP = 'UPDATE') THEN
-            UPDATE bitacora SET verb = 'EDIT', modified = 'PLAYLIST', modify_date = nao WHERE _id = pos;
-            EXECUTE add_user_to_bitacora(usn);
-            RETURN NEW;
-
-        ELSIF (TG_OP = 'INSERT') THEN
-            UPDATE bitacora SET verb = 'CREATE', modified = 'PLAYLIST', modify_date = nao WHERE _id = pos;
-            EXECUTE add_user_to_bitacora(usn);
-            RETURN NEW;
-        END IF;
-        -- RETURN NEW;
+		UPDATE bitacora SET verb = 'DELETE', modified = 'PLAYLIST', modified_id = OLD.playlistId, modify_date = nao WHERE _id = pos;
+		EXECUTE add_user_to_bitacora(usn);
+		RETURN OLD;
     END;
 $$
 LANGUAGE plpgsql;
 
-CREATE TRIGGER playlist_bitacora_trigger 
-    BEFORE UPDATE OR INSERT OR DELETE ON playlist 
-    EXECUTE PROCEDURE playlist_update_bitacora();
+CREATE TRIGGER playlist_bitacora_trigger_del 
+    BEFORE DELETE ON playlist 
+    FOR EACH ROW EXECUTE PROCEDURE playlist_delete_bitacora();
