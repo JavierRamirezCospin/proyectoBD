@@ -16,7 +16,9 @@ CREATE TABLE bitacora (
     username VARCHAR(30) NOT NULL,
     verb VARCHAR(7) NULL,
     _object VARCHAR NULL, -- track / playlist / artist / album
-    -- _object_id INT NULL,
+    modified_id INT NULL,
+    old_values VARCHAR(810),
+    new_values VARCHAR(810),
     modify_date TIMESTAMP NULL,
     
 );
@@ -43,6 +45,7 @@ $$
 DECLARE nao TIMESTAMP;
 DECLARE usn VARCHAR(30);
 DECLARE pos INT;
+-- DECLARE old_values VARCHAR(810);
 
     BEGIN
         SELECT NOW() INTO nao;
@@ -50,8 +53,8 @@ DECLARE pos INT;
 
         IF (TG_OP = 'UPDATE') THEN
         -- old y new
-            
-            UPDATE bitacora SET verb = 'EDIT', modified = 'TRACK', modified_id = OLD.trackId, modify_date = nao WHERE _id = pos;
+            -- OLD into old_values;
+            UPDATE bitacora SET verb = 'EDIT', modified = 'TRACK', modified_id = OLD.trackId, modify_date = nao, old_values = OLD, new_values = NEW WHERE _id = pos;
             EXECUTE add_user_to_bitacora(usn);
             RETURN NEW;
 
@@ -109,7 +112,7 @@ DECLARE pos INT;
         IF (TG_OP = 'UPDATE') THEN
         -- old y new
             
-            UPDATE bitacora SET verb = 'EDIT', modified = 'ARTIST', modified_id = OLD.artistId, modify_date = nao WHERE _id = pos;
+            UPDATE bitacora SET verb = 'EDIT', modified = 'ARTIST', modified_id = OLD.artistId, modify_date = nao, old_values = OLD, new_values = NEW WHERE _id = pos;
             EXECUTE add_user_to_bitacora(usn);
             RETURN NEW;
 
@@ -164,7 +167,7 @@ DECLARE pos INT;
         IF (TG_OP = 'UPDATE') THEN
         -- old y new
             
-            UPDATE bitacora SET verb = 'EDIT', modified = 'ALBUM', modified_id = OLD.albumId, modify_date = nao WHERE _id = pos;
+            UPDATE bitacora SET verb = 'EDIT', modified = 'ALBUM', modified_id = OLD.albumId, modify_date = nao, old_values = OLD, new_values = NEW WHERE _id = pos;
             EXECUTE add_user_to_bitacora(usn);
             RETURN NEW;
 
@@ -220,7 +223,7 @@ DECLARE pos INT;
         IF (TG_OP = 'UPDATE') THEN
         -- old y new
             
-            UPDATE bitacora SET verb = 'EDIT', modified = 'PLAYLIST', modified_id = OLD.playlistId, modify_date = nao WHERE _id = pos;
+            UPDATE bitacora SET verb = 'EDIT', modified = 'PLAYLIST', modified_id = OLD.playlistId, modify_date = nao, old_values = OLD, new_values = NEW = nao WHERE _id = pos;
             EXECUTE add_user_to_bitacora(usn);
             RETURN NEW;
 

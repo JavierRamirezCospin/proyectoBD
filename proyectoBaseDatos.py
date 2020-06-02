@@ -1,5 +1,6 @@
 import tkinter
 from tkinter import font
+from tkinter import IntVar, StringVar, Entry, OptionMenu, Button, Label
 from pymongo import *
 import webbrowser
 import psycopg2
@@ -1304,7 +1305,7 @@ def adminView(currentUser):
     trackLogs = tkinter.Button(adminWindow, text="Song Logs",width=20,height=1, command = lambda: listenSongsView(adminWindow,currentUser))
     trackLogs.grid(row=8,column=3)
     space6 = tkinter.Label(adminWindow, text="").grid(row=9,column=3)
-    purchaseSimulator = tkinter.Button(adminWindow, text="Purchase Simulator",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
+    purchaseSimulator = tkinter.Button(adminWindow, text="Simulator",width=20,height=1, command = lambda: randomizerView())
     purchaseSimulator.grid(row=10,column=3)
     promotion = tkinter.Button(adminWindow, text="Promotion",width=20,height=1, command = lambda: promotionView(adminWindow,currentUser))
     promotion.grid(row=12,column=3)
@@ -2867,6 +2868,136 @@ def showRangeSellingsView(View,currentUser):
     View.destroy()
     showRangeSellingsWindow.mainloop()
 
+def randomizerView():
+    randomizer = tkinter.Tk()
+    randomizer.geometry("400x200")
+    number = IntVar()
+    optionsvar = StringVar()
+    
+    numberEntry = Entry(randomizer, width=8, textvariable=number)
+    datevar = StringVar()
+    datevar.set('2020-06-01')
+    dateEntry = Entry(randomizer, width=20, textvariable=datevar)
+    #   yyyy-mm-dd
+    opLabel = Label(randomizer, text='Opciones')
+    fechaLabel  = Label(randomizer, text='Fecha YYYY-MM-DD')
+    cantidad = Label(randomizer, text='Cantidad a simular')
+    randoptions = OptionMenu(randomizer, optionsvar, 'Compras', 'Reproducciones')
+    randoptions.config(width=14)
+    # randoptions.set('Compras')
+
+    def decider():
+        if optionsvar.get() == 'Compras':
+            n = int(numberEntry.get())
+            d = dateEntry.get()
+            print('Deciding', n, d)
+            makeRandomPurchases(n, d)
+        elif optionsvar.get() == 'Reproducciones':
+            n = int(numberEntry.get())
+            print('Deciding', n)
+            makeRandomPlays(n)
+
+    randomButton = Button(randomizer, text='Ejecutar', width=8, command=decider)
+    
+    randoptions.grid(row=1, column=1)
+    opLabel.grid(row=1, column=0)
+    fechaLabel.grid(row=2, column=0)
+    dateEntry.grid(row=2, column=1)
+    cantidad.grid(row=3, column=0)
+    numberEntry.grid(row=3, column=1)
+    randomButton.grid(row=4, column=0)
+    # backToView(adminView, currentUser)
+
+def getRandomTracktIds(n):
+    try:
+        cur = con.cursor()
+        cur.execute("""SELECT trackid FROM track;""")
+        IDS = cur.fetchall()
+        size = len(IDS) - 1
+        randomIds = []
+        for x in range(n):
+            randomIds.append(IDS[random.randint(0, size)])
+        return randomIds
+    except Exception as ex:
+        print(f'getRandomTracktIds exception: \n{ex}')
+
+def getRandomCustIds(n):
+    try:
+        cur = con.cursor()
+        cur.execute("""SELECT customerid, address, city, state, country, postalcode FROM customer;""")
+        IDS = cur.fetchall()
+        size = len(IDS) - 1
+        randomIds = []
+        # address, city, state, country, pscode
+        for x in range(n):
+            randomIds.append(IDS[random.randint(0, size)])
+        return randomIds
+    except Exception as ex:
+        print(f'getRandomCustIds exception: \n{ex}')
+
+def makeRandomPurchases(n, date):
+    #   n === int
+    #   date === string
+    try:
+        
+        cur = con.cursor()
+        cur.execute("""SELECT invoiceid FROM invoice order by invoiceid desc limit 1;""")
+        IDS = cur.fetchall()
+        last_invoice = IDS[0][0]
+        cur.execute("""SELECT invoicelineid FROM invoiceline order by invoicelineid desc limit 1;""")
+        IDS = cur.fetchall()
+        last_invoice_line = IDS[0][0]
+        track_ids = getRandomTracktIds(n)
+        customer_ids = getRandomCustIds(n)
+        
+        #   invoice -> invoiceline
+        for purchase in range(n):
+            last_invoice += 1
+            last_invoice_line += 1
+            customer = customer_ids[purchase]
+            track_id = track_ids[purchase][0]
+            print('Customer ID:', customer[0], 'Bougth:', track_id)
+            #   insert invoice
+            cur.execute(f"""INSERT INTO invoice(invoiceid, customerid, invoicedate, billingaddress, 
+                            billingcity, billingstate, billingcountry, billingpostalcode, total) 
+                            VALUES({last_invoice}, {customer[0]}, '{date}', '{customer[1]}', '{customer[2]}', '{customer[3]}', 
+                            '{customer[4]}', '{customer[5]}', 0.99);""")
+            #   insert invoiceline
+            cur.execute(f'''INSERT INTO invoiceline(invoicelineid, invoiceid, trackid, unitprice, quantity) 
+                VALUES ({last_invoice_line}, {last_invoice}, {track_id}, 0.99, 1);''')
+
+        con.commit()
+        print(f'Made {n} random purchases for date: {date}')
+    except Exception as ex:
+        print(f'makeRandomPurchases exception: \n{ex}')
+
+def makeRandomPlays(n):
+    try:
+        randomIds = []
+        cur = con.cursor()
+        cur.execute("""SELECT trackid FROM InvoiceLine;""")
+        #   get all trackids that have been purchased
+        IDS = cur.fetchall()
+        size = len(IDS) - 1
+        #   get random trackids to play from purchased track list
+        #   insert said ids into array
+        for x in range(n):
+            randomIds.append(IDS[random.randint(0, size)])
+        
+        #   insert into songplayings table
+        for _id in randomIds:
+            cur.execute(f"""INSERT INTO songplayings(trackid, playing) VALUES({_id[0]}, 1);""")
+            print(f'Song: {_id[0]} just played')
+        
+        con.commit()
+        print(f'Played {n} random songs.')
+    except Exception as ex:
+        print(f'makeRandomPlays exception: \n{ex}')
+
+
+
+
+
 ##################################################################################################################
                                                 #Programa
 ##################################################################################################################
@@ -2877,8 +3008,10 @@ try:
     con = psycopg2.connect(
         host = "127.0.0.1",
         database = "proyecto1",
+        # database = "basesdb",
         user = "postgres",
         password = "uvg123",
+        # password = "7654321.",
         port = 5432
     )
     print("->Connected Succesfully to DB!")
