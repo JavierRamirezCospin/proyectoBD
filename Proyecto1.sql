@@ -19,6 +19,41 @@ CREATE TABLE Album
     FOREIGN KEY (ArtistId) REFERENCES Artist (ArtistId) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
+DROP TABLE IF EXISTS Genre;
+CREATE TABLE Genre
+(
+    GenreId INT NOT NULL,
+    Name VARCHAR(120),
+    CONSTRAINT PK_Genre PRIMARY KEY (GenreId)
+);
+
+DROP TABLE IF EXISTS MediaType;
+CREATE TABLE MediaType
+(
+    MediaTypeId INT NOT NULL,
+    Name VARCHAR(120),
+    CONSTRAINT PK_MediaType PRIMARY KEY (MediaTypeId)
+);
+
+DROP TABLE IF EXISTS Track;
+CREATE TABLE Track
+(
+    TrackId INT NOT NULL,
+    Name VARCHAR(200) NOT NULL,
+    AlbumId INT,
+    MediaTypeId INT NOT NULL,
+    GenreId INT,
+    Composer VARCHAR(220),
+    Milliseconds INT NOT NULL,
+    Bytes INT,
+    UnitPrice NUMERIC(10,2) NOT NULL,
+    songURL VARCHAR(200),
+    CONSTRAINT PK_Track PRIMARY KEY (TrackId),
+    FOREIGN KEY (AlbumId) REFERENCES Album (AlbumId) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (GenreId) REFERENCES Genre (GenreId) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (MediaTypeId) REFERENCES MediaType (MediaTypeId) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
 DROP TABLE IF EXISTS Roles;
 CREATE TABLE Roles 
 (
@@ -38,9 +73,9 @@ CREATE TABLE Permisos
 DROP TABLE IF EXISTS RolesAndPermisos;
 CREATE TABLE RolesAndPermisos
 (
-	NombreRol VARCHAR(20) NOT NULL,
+	RolId INT NOT NULL,
 	PermisoId INT NOT NULL,
-	FOREIGN KEY (NombreRol) REFERENCES Roles (NombreRol) ON DELETE NO ACTION ON UPDATE NO ACTION,
+	FOREIGN KEY (RolId) REFERENCES Roles (RolId) ON DELETE NO ACTION ON UPDATE NO ACTION,
 	FOREIGN KEY (PermisoId) REFERENCES Permisos (PermisoId) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
@@ -94,14 +129,6 @@ CREATE TABLE Customer
     FOREIGN KEY (rol) REFERENCES Roles (RolId) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
-DROP TABLE IF EXISTS Genre;
-CREATE TABLE Genre
-(
-    GenreId INT NOT NULL,
-    Name VARCHAR(120),
-    CONSTRAINT PK_Genre PRIMARY KEY (GenreId)
-);
-
 DROP TABLE IF EXISTS Invoice;
 CREATE TABLE Invoice
 (
@@ -131,35 +158,6 @@ CREATE TABLE InvoiceLine
     FOREIGN KEY (TrackId) REFERENCES Track (TrackId) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
-DROP TABLE IF EXISTS MediaType;
-CREATE TABLE MediaType
-(
-    MediaTypeId INT NOT NULL,
-    Name VARCHAR(120),
-    CONSTRAINT PK_MediaType PRIMARY KEY (MediaTypeId)
-);
-
-DROP TABLE IF EXISTS Track;
-CREATE TABLE Track
-(
-    TrackId INT NOT NULL,
-    Name VARCHAR(200) NOT NULL,
-    AlbumId INT,
-    MediaTypeId INT NOT NULL,
-    GenreId INT,
-    Composer VARCHAR(220),
-    Milliseconds INT NOT NULL,
-    Bytes INT,
-    UnitPrice NUMERIC(10,2) NOT NULL,
-    songURL VARCHAR(200),
-    CONSTRAINT PK_Track PRIMARY KEY (TrackId),
-    FOREIGN KEY (AlbumId) REFERENCES Album (AlbumId) ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY (GenreId) REFERENCES Genre (GenreId) ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY (MediaTypeId) REFERENCES MediaType (MediaTypeId) ON DELETE NO ACTION ON UPDATE NO ACTION
-);
-
-
-
 DROP TABLE IF EXISTS Playlist;
 CREATE TABLE Playlist
 (
@@ -188,6 +186,18 @@ CREATE TABLE SongPlayings
 	FOREIGN KEY (TrackId) REFERENCES Track (TrackId) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
+DROP TABLE IF EXISTS bitacora;
+CREATE TABLE bitacora (
+    _id SERIAL PRIMARY KEY,
+    username VARCHAR(30) NOT NULL,
+    verb VARCHAR(7) NULL,
+    modified VARCHAR NULL, -- track / playlist / artist / album
+    modified_id INT NULL,
+    old_values VARCHAR(810),
+    new_values VARCHAR(810),
+    modify_date TIMESTAMP NULL
+);
+
 CREATE OR REPLACE FUNCTION songplaying_insert_update()
   RETURNS TRIGGER AS
 $$
@@ -214,19 +224,6 @@ LANGUAGE plpgsql;
 CREATE TRIGGER songplaying_trigger_up_ins
     BEFORE INSERT ON songplayings 
     FOR EACH ROW EXECUTE PROCEDURE songplaying_insert_update();
-
-
-CREATE TABLE bitacora (
-    _id SERIAL PRIMARY KEY,
-    username VARCHAR(30) NOT NULL,
-    verb VARCHAR(7) NULL,
-    _object VARCHAR NULL, -- track / playlist / artist / album
-    modified_id INT NULL,
-    old_values VARCHAR(810),
-    new_values VARCHAR(810),
-    modify_date TIMESTAMP NULL,
-    
-);
 
 CREATE OR REPLACE FUNCTION add_user_to_bitacora(username VARCHAR(30)) RETURNS void AS
 $$
@@ -545,35 +542,35 @@ INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (9,'Eliminar Cancion
 INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (10,'Inactivar Canciones del catalogo');
 INSERT INTO permisos (PermisoId, DescripcionPermiso) VALUES (11, 'Revisar Bitacora');
 
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 1',1);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 1',2);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 1',3);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',1);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',2);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',3);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',4);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',5);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',6);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',1);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',2);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',3);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',4);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',5);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',6);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',7);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',8);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',9);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',1);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',2);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',3);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',4);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',5);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',6);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',7);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',8);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',9);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',10);
-INSERT INTO rolesandpermisos (NombreRol, NumeroPermiso) VALUES ('Administrador', 11);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (1,1);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (1,2);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (1,3);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (2,1);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (2,2);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (2,3);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (2,4);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (2,5);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (2,6);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,1);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,2);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,3);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,4);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,5);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,6);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,7);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,8);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,9);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,1);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,2);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,3);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,4);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,5);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,6);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,7);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,8);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,9);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,10);
+INSERT INTO rolesandpermisos (RolId, PermisoId) VALUES (4,11);
 
 INSERT INTO Artist (ArtistId, Name) VALUES (1,'AC/DC');
 INSERT INTO Artist (ArtistId, Name) VALUES (2,'Accept');
