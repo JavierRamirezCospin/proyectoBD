@@ -375,7 +375,6 @@ def songDeactivation(currentUser):
     try:
         cur = con.cursor()
         songTitle = deactivateSongTitle.get()
-        songComposer = deactivateSongComposer.get()
         dictionary = {'Name':songTitle}
         cur.execute("""SELECT activa
                         FROM track
@@ -397,7 +396,6 @@ def songActivation(currentUser):
     try:
         cur = con.cursor()
         songTitle = activateSongTitle.get()
-        songComposer = activateSongComposer.get()
         dictionary = {'Name':songTitle}
         cur.execute("""SELECT activa
                         FROM track
@@ -535,19 +533,19 @@ def listenCustomerSongsFunction(currentUser):
         print("    2. Song does not have a URL")
 
 def addSongToWishlist(currentUser,wishlist):
-    try:
-        cur = con.cursor()
-        songName = purchaseSongName.get()
-        dictionary = {'Name':songName}
-        cur.execute("""select name from track where name = %(Name)s limit 1;""",dictionary)
-        rows = cur.fetchall()
-        for r in rows:
-            wishlist.append(r[0])
-        print("\n-> Song added to Wishlist!")
-        print("-> There are now " + str(len(wishlist)) + " items in your wishlist!")
-        cur.close()
-    except:
-        print("\n-> No song with that name!")
+
+    cur = con.cursor()
+    songName = purchaseSongName.get()
+    dictionary = {'Name':songName}
+    cur.execute("""select name from track where name = %(Name)s limit 1;""",dictionary)
+    rows = cur.fetchall()
+    for r in rows:
+        wishlist.append(r[0])
+    print("\n-> Song added to Wishlist!")
+    print("-> There are now " + str(len(wishlist)) + " items in your wishlist!")
+    cur.close()
+    #except:
+        #print("\n-> No song with that name!")
 
 def songPayment(currentUser,wishlist,totalprice):
     try:
@@ -1299,7 +1297,7 @@ def adminView(currentUser):
     listenSongs = tkinter.Button(adminWindow, text="Listen Songs",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
     listenSongs.grid(row=4,column=3)
     space4 = tkinter.Label(adminWindow, text="").grid(row=5,column=3)
-    purchaseSongs = tkinter.Button(adminWindow, text="Purchase Songs",width=20,height=1, command = lambda: listenSongsView(adminWindow,currentUser))
+    purchaseSongs = tkinter.Button(adminWindow, text="Purchase Songs",width=20,height=1, command = lambda: listenSongsAdminView(adminWindow,currentUser))
     purchaseSongs.grid(row=6,column=3)
     space5 = tkinter.Label(adminWindow, text="").grid(row=7,column=3)
     trackLogs = tkinter.Button(adminWindow, text="Song Logs",width=20,height=1, command = lambda: listenSongsView(adminWindow,currentUser))
@@ -1745,11 +1743,6 @@ def deactivateSongView(View,currentUser):
     deactivateSongTitle.pack()
     space1 = tkinter.Label(deactivateWindow, text="")
     space1.pack()
-    Instruction2 = tkinter.Label(deactivateWindow, text="Enter Song Composer")
-    Instruction2.config(font=("Helvetica",15,"bold"))
-    Instruction2.pack()
-    deactivateSongComposer = tkinter.Entry(deactivateWindow, font="Helvetica 20")
-    deactivateSongComposer.pack()
     space2 = tkinter.Label(deactivateWindow, text="")
     space2.pack()
     deactivateSongBtn = tkinter.Button(deactivateWindow,text="Deactivate Song",bg="#c8c8c8",padx=20,pady=10, command = lambda: songDeactivation(currentUser))
@@ -1780,11 +1773,6 @@ def activateSongView(View,currentUser):
     activateSongTitle.pack()
     space1 = tkinter.Label(activateWindow, text="")
     space1.pack()
-    Instruction2 = tkinter.Label(activateWindow, text="Enter Song Composer")
-    Instruction2.config(font=("Helvetica",15,"bold"))
-    Instruction2.pack()
-    activateSongComposer = tkinter.Entry(activateWindow, font="Helvetica 20")
-    activateSongComposer.pack()
     space2 = tkinter.Label(activateWindow, text="")
     space2.pack()
     activateSongBtn = tkinter.Button(activateWindow,text="Activate Song",bg="#c8c8c8",padx=20,pady=10, command = lambda: songActivation(currentUser))
@@ -1836,7 +1824,7 @@ def userPermissionView(View,currentUser):
     permissionNewNumber.pack()
     space4 = tkinter.Label(permissionWindow, text="")
     space4.pack()
-    changePermissionBtn = tkinter.Button(permissionWindow,text="Activate Song",bg="#c8c8c8",padx=20,pady=10, command = lambda: changeUserPermission(currentUser))
+    changePermissionBtn = tkinter.Button(permissionWindow,text="Change Permission",bg="#c8c8c8",padx=20,pady=10, command = lambda: changeUserPermission(currentUser))
     changePermissionBtn.pack()
     space3 = tkinter.Label(permissionWindow, text="")
     space3.pack()
@@ -2451,7 +2439,7 @@ def checkoutView(View,currentUser,wishlist):
     buySongsBtn = tkinter.Button(checkoutView, text="Buy Songs", padx=15, pady=5, bg="#c8c8c8", command = lambda: songPayment(currentUser,wishlist,totalprice))
     buySongsBtn.grid(row=i+4,column=2)
     space3 = tkinter.Label(checkoutView, text="").grid(row=i+5,column=2)
-    buySongsBtn = tkinter.Button(checkoutView, text="Cancel Payment", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(checkoutView,currentUser))
+    buySongsBtn = tkinter.Button(checkoutView, text="Continue", padx=15, pady=5, bg="#c8c8c8", command = lambda: backToView(checkoutView,currentUser))
     buySongsBtn.grid(row=i+6,column=2)
     checkoutView.mainloop()
 
