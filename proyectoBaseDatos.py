@@ -1,6 +1,5 @@
 import tkinter
-from tkinter import font
-from tkinter import IntVar, StringVar, Entry, OptionMenu, Button, Label
+from tkinter import font, IntVar, StringVar, Entry, OptionMenu, Button, Label, Frame
 from pymongo import *
 import webbrowser
 import psycopg2
@@ -9,12 +8,17 @@ from datetime import date
 import csv
 from reportlab.platypus import SimpleDocTemplate,Table,TableStyle
 from reportlab.lib import colors
+from multicolumns import MultiTwo
 
 ##################################################################################################################
                                         #Funciones para el sistema
 ##################################################################################################################
 def logOut(View,currentUser):
+    cur = con.cursor()
     View.destroy()
+    print(f"SELECT remove_user_from_bitacora(\'{currentUser['name']}\')")
+    cur.execute(f'''SELECT remove_user_from_bitacora(\'{currentUser['name']}\');''')
+    con.commit()
     currentUser = {}
     loginView(con)
 
@@ -868,6 +872,9 @@ def loginUser(window,con):
             if user == r[0] and password == r[1]:
                 currentUser['name'] = user
                 currentUser['type'] = 'admin' 
+                # print(f'Calling adduser2bitacora with {user}')
+                cur.callproc(f'''add_user_to_bitacora''', [user])
+                con.commit()
                 adminView(currentUser)
                 window.destroy()
                 
@@ -887,18 +894,27 @@ def loginUser(window,con):
                     if userType == 1:
                         currentUser['type'] = 'Tier 1'
                         customer1View(currentUser)
+                        # print(f'Calling adduser2bitacora with {user}')
+                        cur.callproc(f'''add_user_to_bitacora''', [user])
+                        con.commit()
                         window.destroy()
                     elif userType == 2:
                         currentUser['type'] = 'Tier 2'
                         customer2View(currentUser)
+                        # print(f'Calling adduser2bitacora with {user}')
+                        cur.callproc(f'''add_user_to_bitacora''', [user])
+                        con.commit()
                         window.destroy()
                     elif userType == 3:
                         currentUser['type'] = 'Tier 3'
                         customer3View(currentUser)
+                        # print(f'Calling adduser2bitacora with {user}')
+                        cur.callproc(f'''add_user_to_bitacora''', [user])
+                        con.commit()
                         window.destroy()
         cur.close()
-    except:
-        print("Login Failed")
+    except Exception as e:
+        print("Login Failed\n", e)
 
 ##################################################################################################################
                                         #Vistas del sistema
@@ -1160,6 +1176,7 @@ def customer2View(currentUser):
     salesPerGenre.grid(row=8,column=4)
     artistPlaybackBtn = tkinter.Button(customer2View, text="Artist Playback",width=20,height=1, command = lambda: artistPlayedSongsView(customer2View,currentUser))
     artistPlaybackBtn.grid(row=10,column=4)
+    
     space0 = tkinter.Label(customer2View, text="").grid(row=10,column=1)
     space0 = tkinter.Label(customer2View, text="").grid(row=11,column=1)
     space0 = tkinter.Label(customer2View, text="").grid(row=12,column=1)
@@ -1317,6 +1334,8 @@ def adminView(currentUser):
     salesPerGenre.grid(row=8,column=4)
     artistPlaybackBtn = tkinter.Button(adminWindow, text="Artist Playback",width=20,height=1, command = lambda: artistPlayedSongsView(adminWindow,currentUser))
     artistPlaybackBtn.grid(row=10,column=4)
+    bitacoraBtn = tkinter.Button(adminWindow, text="Bitacora", width=20, height=1, command = lambda: bitacoraView())
+    bitacoraBtn.grid(row=12,column=4)
     space8 = tkinter.Label(adminWindow, text="").grid(row=18,column=1)
     space9 = tkinter.Label(adminWindow, text="").grid(row=19,column=1)
     logoutBtn = tkinter.Button(adminWindow, text="LOGOUT", width=20, height=1, bg="#ff9999", command = lambda: logOut(adminWindow,currentUser))
@@ -2858,9 +2877,11 @@ def showRangeSellingsView(View,currentUser):
 
 def randomizerView():
     randomizer = tkinter.Tk()
-    randomizer.geometry("400x200")
+    randomizer.title('Simulator')
+    randomizer.geometry("300x150")
     number = IntVar()
     optionsvar = StringVar()
+    optionsvar.set('Compras')
     
     numberEntry = Entry(randomizer, width=8, textvariable=number)
     datevar = StringVar()
@@ -2870,30 +2891,29 @@ def randomizerView():
     opLabel = Label(randomizer, text='Opciones')
     fechaLabel  = Label(randomizer, text='Fecha YYYY-MM-DD')
     cantidad = Label(randomizer, text='Cantidad a simular')
-    randoptions = OptionMenu(randomizer, optionsvar, 'Compras', 'Reproducciones')
-    randoptions.config(width=14)
+    randoptions = OptionMenu(randomizer, optionsvar, 'Compras', 'Reproducciones', 
+    command= lambda x: dateEntry.config(state='normal') if optionsvar.get() == 'Compras' else dateEntry.config(state='disabled'))
+    randoptions.config(width=20)
     # randoptions.set('Compras')
 
     def decider():
         if optionsvar.get() == 'Compras':
             n = int(numberEntry.get())
             d = dateEntry.get()
-            print('Deciding', n, d)
             makeRandomPurchases(n, d)
         elif optionsvar.get() == 'Reproducciones':
             n = int(numberEntry.get())
-            print('Deciding', n)
             makeRandomPlays(n)
 
     randomButton = Button(randomizer, text='Ejecutar', width=8, command=decider)
     
-    randoptions.grid(row=1, column=1)
-    opLabel.grid(row=1, column=0)
-    fechaLabel.grid(row=2, column=0)
-    dateEntry.grid(row=2, column=1)
-    cantidad.grid(row=3, column=0)
-    numberEntry.grid(row=3, column=1)
-    randomButton.grid(row=4, column=0)
+    randoptions.grid(row=1, column=1, sticky='w')
+    opLabel.grid(row=1, column=0, sticky='w')
+    fechaLabel.grid(row=2, column=0, sticky='w')
+    dateEntry.grid(row=2, column=1, sticky='w')
+    cantidad.grid(row=3, column=0, sticky='w')
+    numberEntry.grid(row=3, column=1, sticky='w')
+    randomButton.grid(row=4, column=1, columnspan=2)
     # backToView(adminView, currentUser)
 
 def getRandomTracktIds(n):
@@ -2982,7 +3002,42 @@ def makeRandomPlays(n):
     except Exception as ex:
         print(f'makeRandomPlays exception: \n{ex}')
 
+def getBitacora():
+    try:
+        cur = con.cursor()
+        cur.execute("""SELECT username, verb, modified, modified_id, old_values, new_values, modify_date 
+                    FROM bitacora 
+                    WHERE verb is not Null;""")
+        data = cur.fetchall()
+        return data
+    except Exception as ex:
+        print(f'getBitacora exception: \n{ex}')
 
+def bitacoraView():
+    try:
+        bitacora = tkinter.Tk()
+        bitacora.title('Bitacora')
+        bitacora.geometry("900x350")
+        container = Frame(bitacora)
+        lb = Label(bitacora, text="Bitacora de cambios")
+        lb.grid(row=0, column=0)
+        data = getBitacora()
+        container.grid(row=2, columnspan=100, sticky='NSWE')
+        container.grid_propagate(1)
+        mt = MultiTwo(container, data)
+        mt.grid()
+
+        def refresh():
+            print('Refreshing data')
+            data = getBitacora()
+            mt = MultiTwo(container, data)
+            mt.grid()
+
+        bitButt = Button(bitacora, text='Refresh', command=refresh)
+        bitButt.grid(row=10)
+
+    except Exception as ex:
+        print(f'bitacoraView exception: \n{ex}')
 
 
 

@@ -19,6 +19,41 @@ CREATE TABLE Album
     FOREIGN KEY (ArtistId) REFERENCES Artist (ArtistId) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
+DROP TABLE IF EXISTS Genre;
+CREATE TABLE Genre
+(
+    GenreId INT NOT NULL,
+    Name VARCHAR(120),
+    CONSTRAINT PK_Genre PRIMARY KEY (GenreId)
+);
+
+DROP TABLE IF EXISTS MediaType;
+CREATE TABLE MediaType
+(
+    MediaTypeId INT NOT NULL,
+    Name VARCHAR(120),
+    CONSTRAINT PK_MediaType PRIMARY KEY (MediaTypeId)
+);
+
+DROP TABLE IF EXISTS Track;
+CREATE TABLE Track
+(
+    TrackId INT NOT NULL,
+    Name VARCHAR(200) NOT NULL,
+    AlbumId INT,
+    MediaTypeId INT NOT NULL,
+    GenreId INT,
+    Composer VARCHAR(220),
+    Milliseconds INT NOT NULL,
+    Bytes INT,
+    UnitPrice NUMERIC(10,2) NOT NULL,
+    songURL VARCHAR(200),
+    CONSTRAINT PK_Track PRIMARY KEY (TrackId),
+    FOREIGN KEY (AlbumId) REFERENCES Album (AlbumId) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (GenreId) REFERENCES Genre (GenreId) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (MediaTypeId) REFERENCES MediaType (MediaTypeId) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
 DROP TABLE IF EXISTS Roles;
 CREATE TABLE Roles 
 (
@@ -38,9 +73,9 @@ CREATE TABLE Permisos
 DROP TABLE IF EXISTS RolesAndPermisos;
 CREATE TABLE RolesAndPermisos
 (
-	NombreRol VARCHAR(20) NOT NULL,
+	RolId INT NOT NULL,
 	PermisoId INT NOT NULL,
-	FOREIGN KEY (NombreRol) REFERENCES Roles (NombreRol) ON DELETE NO ACTION ON UPDATE NO ACTION,
+	FOREIGN KEY (RolId) REFERENCES Roles (RolId) ON DELETE NO ACTION ON UPDATE NO ACTION,
 	FOREIGN KEY (PermisoId) REFERENCES Permisos (PermisoId) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
@@ -94,14 +129,6 @@ CREATE TABLE Customer
     FOREIGN KEY (rol) REFERENCES Roles (RolId) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
-DROP TABLE IF EXISTS Genre;
-CREATE TABLE Genre
-(
-    GenreId INT NOT NULL,
-    Name VARCHAR(120),
-    CONSTRAINT PK_Genre PRIMARY KEY (GenreId)
-);
-
 DROP TABLE IF EXISTS Invoice;
 CREATE TABLE Invoice
 (
@@ -131,35 +158,6 @@ CREATE TABLE InvoiceLine
     FOREIGN KEY (TrackId) REFERENCES Track (TrackId) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
-DROP TABLE IF EXISTS MediaType;
-CREATE TABLE MediaType
-(
-    MediaTypeId INT NOT NULL,
-    Name VARCHAR(120),
-    CONSTRAINT PK_MediaType PRIMARY KEY (MediaTypeId)
-);
-
-DROP TABLE IF EXISTS Track;
-CREATE TABLE Track
-(
-    TrackId INT NOT NULL,
-    Name VARCHAR(200) NOT NULL,
-    AlbumId INT,
-    MediaTypeId INT NOT NULL,
-    GenreId INT,
-    Composer VARCHAR(220),
-    Milliseconds INT NOT NULL,
-    Bytes INT,
-    UnitPrice NUMERIC(10,2) NOT NULL,
-    songURL VARCHAR(200),
-    CONSTRAINT PK_Track PRIMARY KEY (TrackId),
-    FOREIGN KEY (AlbumId) REFERENCES Album (AlbumId) ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY (GenreId) REFERENCES Genre (GenreId) ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY (MediaTypeId) REFERENCES MediaType (MediaTypeId) ON DELETE NO ACTION ON UPDATE NO ACTION
-);
-
-
-
 DROP TABLE IF EXISTS Playlist;
 CREATE TABLE Playlist
 (
@@ -188,6 +186,18 @@ CREATE TABLE SongPlayings
 	FOREIGN KEY (TrackId) REFERENCES Track (TrackId) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
+DROP TABLE IF EXISTS bitacora;
+CREATE TABLE bitacora (
+    _id SERIAL PRIMARY KEY,
+    username VARCHAR(30) NOT NULL,
+    verb VARCHAR(7) NULL,
+    modified VARCHAR NULL, -- track / playlist / artist / album
+    modified_id INT NULL,
+    old_values VARCHAR(810),
+    new_values VARCHAR(810),
+    modify_date TIMESTAMP NULL
+);
+
 CREATE OR REPLACE FUNCTION songplaying_insert_update()
   RETURNS TRIGGER AS
 $$
@@ -214,19 +224,6 @@ LANGUAGE plpgsql;
 CREATE TRIGGER songplaying_trigger_up_ins
     BEFORE INSERT ON songplayings 
     FOR EACH ROW EXECUTE PROCEDURE songplaying_insert_update();
-
-
-CREATE TABLE bitacora (
-    _id SERIAL PRIMARY KEY,
-    username VARCHAR(30) NOT NULL,
-    verb VARCHAR(7) NULL,
-    _object VARCHAR NULL, -- track / playlist / artist / album
-    modified_id INT NULL,
-    old_values VARCHAR(810),
-    new_values VARCHAR(810),
-    modify_date TIMESTAMP NULL,
-    
-);
 
 CREATE OR REPLACE FUNCTION add_user_to_bitacora(username VARCHAR(30)) RETURNS void AS
 $$
@@ -301,56 +298,84 @@ CREATE TRIGGER track_bitacora_trigger_del
 
 -- UPDATE track SET Composer = 'Johnny' WHERE TrackId = 2;
 
--- ARTIST
 
-CREATE OR REPLACE FUNCTION artist_update_insert_bitacora()
-  RETURNS TRIGGER AS
-$$
-DECLARE nao TIMESTAMP;
-DECLARE usn VARCHAR(30);
-DECLARE pos INT;
+/*******************************************************************************
+   Create Primary Key Unique Indexes
+********************************************************************************/
+DROP INDEX IF EXISTS IFK_AlbumArtistId;
+CREATE INDEX IFK_AlbumArtistId ON Album (ArtistId);
+DROP INDEX IF EXISTS IFK_CustomerSupportRepId;
+CREATE INDEX IFK_CustomerSupportRepId ON Customer (SupportRepId);
+DROP INDEX IF EXISTS IFK_EmployeeReportsTo;
+CREATE INDEX IFK_EmployeeReportsTo ON Employee (ReportsTo);
+DROP INDEX IF EXISTS IFK_InvoiceCustomerId;
+CREATE INDEX IFK_InvoiceCustomerId ON Invoice (CustomerId);
+DROP INDEX IF EXISTS IFK_InvoiceLineInvoiceId;
+CREATE INDEX IFK_InvoiceLineInvoiceId ON InvoiceLine (InvoiceId);
+DROP INDEX IF EXISTS IFK_InvoiceLineTrackId;
+CREATE INDEX IFK_InvoiceLineTrackId ON InvoiceLine (TrackId);
+DROP INDEX IF EXISTS IFK_PlaylistTrackTrackId;
+CREATE INDEX IFK_PlaylistTrackTrackId ON PlaylistTrack (TrackId);
+DROP INDEX IF EXISTS IFK_TrackAlbumId;
+CREATE INDEX IFK_TrackAlbumId ON Track (AlbumId);
+DROP INDEX IF EXISTS IFK_TrackGenreId;
+CREATE INDEX IFK_TrackGenreId ON Track (GenreId);
+DROP INDEX IF EXISTS IFK_TrackMediaTypeId;
+CREATE INDEX IFK_TrackMediaTypeId ON Track (MediaTypeId);
+DROP INDEX IF EXISTS IFK_SongPlayingsId;
+CREATE INDEX IFK_SongPlayingsId ON SongPlayings (SongPlayingID);
 
-    BEGIN
-        SELECT NOW() INTO nao;
-        SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
+/*******************************************************************************
+   Populate Tables
+********************************************************************************/
+INSERT INTO Genre (GenreId, Name) VALUES (1,'Rock');
+INSERT INTO Genre (GenreId, Name) VALUES (2,'Jazz');
+INSERT INTO Genre (GenreId, Name) VALUES (3,'Metal');
+INSERT INTO Genre (GenreId, Name) VALUES (4,'Alternative & Punk');
+INSERT INTO Genre (GenreId, Name) VALUES (5,'Rock And Roll');
+INSERT INTO Genre (GenreId, Name) VALUES (6,'Blues');
+INSERT INTO Genre (GenreId, Name) VALUES (7,'Latin');
+INSERT INTO Genre (GenreId, Name) VALUES (8,'Reggae');
+INSERT INTO Genre (GenreId, Name) VALUES (9,'Pop');
+INSERT INTO Genre (GenreId, Name) VALUES (10,'Soundtrack');
+INSERT INTO Genre (GenreId, Name) VALUES (11,'Bossa Nova');
+INSERT INTO Genre (GenreId, Name) VALUES (12,'Easy Listening');
+INSERT INTO Genre (GenreId, Name) VALUES (13,'Heavy Metal');
+INSERT INTO Genre (GenreId, Name) VALUES (14,'R&B/Soul');
+INSERT INTO Genre (GenreId, Name) VALUES (15,'Electronica/Dance');
+INSERT INTO Genre (GenreId, Name) VALUES (16,'World');
+INSERT INTO Genre (GenreId, Name) VALUES (17,'Hip Hop/Rap');
+INSERT INTO Genre (GenreId, Name) VALUES (18,'Science Fiction');
+INSERT INTO Genre (GenreId, Name) VALUES (19,'TV Shows');
+INSERT INTO Genre (GenreId, Name) VALUES (20,'Sci Fi & Fantasy');
+INSERT INTO Genre (GenreId, Name) VALUES (21,'Drama');
+INSERT INTO Genre (GenreId, Name) VALUES (22,'Comedy');
+INSERT INTO Genre (GenreId, Name) VALUES (23,'Alternative');
+INSERT INTO Genre (GenreId, Name) VALUES (24,'Classical');
+INSERT INTO Genre (GenreId, Name) VALUES (25,'Opera');
 
-        IF (TG_OP = 'UPDATE') THEN
-        -- old y new
-            
-            UPDATE bitacora SET verb = 'EDIT', modified = 'ARTIST', modified_id = OLD.artistId, modify_date = nao, old_values = OLD, new_values = NEW WHERE _id = pos;
-            EXECUTE add_user_to_bitacora(usn);
-            RETURN NEW;
+INSERT INTO MediaType (MediaTypeId, Name) VALUES (1,'MPEG audio file');
+INSERT INTO MediaType (MediaTypeId, Name) VALUES (2,'Protected AAC audio file');
+INSERT INTO MediaType (MediaTypeId, Name) VALUES (3,'Protected MPEG-4 video file');
+INSERT INTO MediaType (MediaTypeId, Name) VALUES (4,'Purchased AAC audio file');
+INSERT INTO MediaType (MediaTypeId, Name) VALUES (5,'AAC audio file');
 
-        ELSIF (TG_OP = 'INSERT') THEN
-        -- no old
-            
-            UPDATE bitacora SET verb = 'CREATE', modified = 'ARTIST', modified_id = NEW.artistId, modify_date = nao WHERE _id = pos;
-            EXECUTE add_user_to_bitacora(usn);
-            RETURN NEW;
-        END IF;
-    END;
-$$
-LANGUAGE plpgsql;
+INSERT INTO Roles (RolId, NombreRol) VALUES (1,'Tipo 1');
+INSERT INTO Roles (RolId, NombreRol) VALUES (2,'Tipo 2');
+INSERT INTO Roles (RolId, NombreRol) VALUES (3,'Tipo 3');
+INSERT INTO Roles (RolId, NombreRol) VALUES (4,'Administrador');
 
-CREATE TRIGGER artist_bitacora_trigger_up_ins
-    BEFORE UPDATE OR INSERT ON artist 
-    FOR EACH ROW EXECUTE PROCEDURE artist_update_insert_bitacora();
-
-CREATE OR REPLACE FUNCTION artist_delete_bitacora()
-  RETURNS TRIGGER AS
-$$
-DECLARE nao TIMESTAMP;
-DECLARE usn VARCHAR(30);
-DECLARE pos INT;
-    BEGIN
-        SELECT NOW() INTO nao;
-        SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
-		UPDATE bitacora SET verb = 'DELETE', modified = 'ARTIST', modified_id = OLD.artistId, modify_date = nao WHERE _id = pos;
-		EXECUTE add_user_to_bitacora(usn);
-		RETURN OLD;
-    END;
-$$
-LANGUAGE plpgsql;
+INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (1,'Registrar Artistas');
+INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (2,'Registrar Albumes');
+INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (3,'Registrar Canciones');
+INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (4,'Modificar Artistas');
+INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (5,'Modificar Albumes');
+INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (6,'Modificar Canciones');
+INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (7,'Eliminar Artistas');
+INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (8,'Eliminar Albumes');
+INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (9,'Eliminar Canciones');
+INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (10,'Inactivar Canciones del catalogo');
+INSERT INTO permisos (PermisoId, DescripcionPermiso) VALUES (11, 'Revisar Bitacora');
 
 CREATE TRIGGER artist_bitacora_trigger_del 
     BEFORE DELETE ON artist 
@@ -545,35 +570,35 @@ INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (9,'Eliminar Cancion
 INSERT INTO Permisos (PermisoId, DescripcionPermiso) VALUES (10,'Inactivar Canciones del catalogo');
 INSERT INTO permisos (PermisoId, DescripcionPermiso) VALUES (11, 'Revisar Bitacora');
 
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 1',1);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 1',2);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 1',3);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',1);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',2);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',3);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',4);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',5);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 2',6);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',1);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',2);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',3);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',4);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',5);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',6);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',7);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',8);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Tipo 3',9);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',1);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',2);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',3);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',4);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',5);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',6);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',7);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',8);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',9);
-INSERT INTO RolesAndPermisos (NombreRol, NumeroPermiso) VALUES ('Administrador',10);
-INSERT INTO rolesandpermisos (NombreRol, NumeroPermiso) VALUES ('Administrador', 11);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (1,1);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (1,2);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (1,3);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (2,1);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (2,2);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (2,3);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (2,4);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (2,5);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (2,6);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,1);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,2);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,3);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,4);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,5);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,6);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,7);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,8);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (3,9);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,1);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,2);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,3);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,4);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,5);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,6);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,7);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,8);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,9);
+INSERT INTO RolesAndPermisos (RolId, PermisoId) VALUES (4,10);
+INSERT INTO rolesandpermisos (RolId, PermisoId) VALUES (4,11);
 
 INSERT INTO Artist (ArtistId, Name) VALUES (1,'AC/DC');
 INSERT INTO Artist (ArtistId, Name) VALUES (2,'Accept');
@@ -16166,3 +16191,282 @@ ADD COLUMN activa INT;
 
 UPDATE Track
 SET activa = 1;
+
+CREATE OR REPLACE FUNCTION songplaying_insert_update()
+  RETURNS TRIGGER AS
+$$
+DECLARE play_count INT;
+DECLARE play_id INT;
+
+    BEGIN
+    
+        IF (TG_OP = 'INSERT') THEN
+        -- no old
+            
+            SELECT songplayingid, playing FROM songplayings WHERE trackId = NEW.trackId INTO play_id, play_count;
+            IF play_count > 0 THEN
+                SELECT play_count + 1 INTO play_count;
+                UPDATE songplayings SET playing = play_count WHERE trackid = NEW.trackId AND songplayingid = play_id;
+                RETURN NULL;
+            END IF;
+            RETURN NEW;
+        END IF;
+    END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER songplaying_trigger_up_ins
+    BEFORE INSERT ON songplayings 
+    FOR EACH ROW EXECUTE PROCEDURE songplaying_insert_update();
+
+
+CREATE TABLE bitacora (
+    _id SERIAL PRIMARY KEY,
+    username VARCHAR(30) NOT NULL,
+    verb VARCHAR(7) NULL,
+    _object VARCHAR NULL, -- track / playlist / artist / album
+    modified_id INT NULL,
+    old_values VARCHAR(810),
+    new_values VARCHAR(810),
+    modify_date TIMESTAMP NULL
+    
+);
+
+CREATE OR REPLACE FUNCTION add_user_to_bitacora(username VARCHAR(30)) RETURNS void AS
+$$
+    BEGIN
+        INSERT into bitacora (username) VALUES (username);
+    END
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION remove_user_from_bitacora(username VARCHAR(30)) RETURNS void AS
+$$
+    BEGIN
+        DELETE FROM bitacora WHERE username = username AND verb = null AND modified = null AND modify_date = NULL;
+    END
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION track_update_insert_bitacora()
+  RETURNS TRIGGER AS
+$$
+DECLARE nao TIMESTAMP;
+DECLARE usn VARCHAR(30);
+DECLARE pos INT;
+-- DECLARE old_values VARCHAR(810);
+
+    BEGIN
+        SELECT NOW() INTO nao;
+        SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
+
+        IF (TG_OP = 'UPDATE') THEN
+        -- old y new
+            -- OLD into old_values;
+            UPDATE bitacora SET verb = 'EDIT', modified = 'TRACK', modified_id = OLD.trackId, modify_date = nao, old_values = OLD, new_values = NEW WHERE _id = pos;
+            EXECUTE add_user_to_bitacora(usn);
+            RETURN NEW;
+
+        ELSIF (TG_OP = 'INSERT') THEN
+        -- no old
+            RAISE NOTICE 'NEW in INSERT: %', NEW.trackId;
+            
+            UPDATE bitacora SET verb = 'CREATE', modified = 'TRACK', modified_id = NEW.trackId, modify_date = nao WHERE _id = pos;
+            EXECUTE add_user_to_bitacora(usn);
+            RETURN NEW;
+        END IF;
+    END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER track_bitacora_trigger_up_ins
+    BEFORE UPDATE OR INSERT ON track 
+    FOR EACH ROW EXECUTE PROCEDURE track_update_insert_bitacora();
+
+CREATE OR REPLACE FUNCTION track_delete_bitacora()
+  RETURNS TRIGGER AS
+$$
+DECLARE nao TIMESTAMP;
+DECLARE usn VARCHAR(30);
+DECLARE pos INT;
+    BEGIN
+        SELECT NOW() INTO nao;
+        SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
+        UPDATE bitacora SET verb = 'DELETE', modified = 'TRACK', modified_id = OLD.trackid, modify_date = nao WHERE _id = pos;
+        EXECUTE add_user_to_bitacora(usn);
+        RETURN OLD;
+    END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER track_bitacora_trigger_del 
+    BEFORE DELETE ON track 
+    FOR EACH ROW EXECUTE PROCEDURE track_delete_bitacora();
+
+-- UPDATE track SET Composer = 'Johnny' WHERE TrackId = 2;
+
+-- ARTIST
+
+CREATE OR REPLACE FUNCTION artist_update_insert_bitacora()
+  RETURNS TRIGGER AS
+$$
+DECLARE nao TIMESTAMP;
+DECLARE usn VARCHAR(30);
+DECLARE pos INT;
+
+    BEGIN
+        SELECT NOW() INTO nao;
+        SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
+
+        IF (TG_OP = 'UPDATE') THEN
+        -- old y new
+            
+            UPDATE bitacora SET verb = 'EDIT', modified = 'ARTIST', modified_id = OLD.artistId, modify_date = nao, old_values = OLD, new_values = NEW WHERE _id = pos;
+            EXECUTE add_user_to_bitacora(usn);
+            RETURN NEW;
+
+        ELSIF (TG_OP = 'INSERT') THEN
+        -- no old
+            
+            UPDATE bitacora SET verb = 'CREATE', modified = 'ARTIST', modified_id = NEW.artistId, modify_date = nao WHERE _id = pos;
+            EXECUTE add_user_to_bitacora(usn);
+            RETURN NEW;
+        END IF;
+    END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER artist_bitacora_trigger_up_ins
+    BEFORE UPDATE OR INSERT ON artist 
+    FOR EACH ROW EXECUTE PROCEDURE artist_update_insert_bitacora();
+
+CREATE OR REPLACE FUNCTION artist_delete_bitacora()
+  RETURNS TRIGGER AS
+$$
+DECLARE nao TIMESTAMP;
+DECLARE usn VARCHAR(30);
+DECLARE pos INT;
+    BEGIN
+        SELECT NOW() INTO nao;
+        SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
+        UPDATE bitacora SET verb = 'DELETE', modified = 'ARTIST', modified_id = OLD.artistId, modify_date = nao WHERE _id = pos;
+        EXECUTE add_user_to_bitacora(usn);
+        RETURN OLD;
+    END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER artist_bitacora_trigger_del 
+    BEFORE DELETE ON artist 
+    FOR EACH ROW EXECUTE PROCEDURE artist_delete_bitacora();
+
+-- ALBUM
+
+CREATE OR REPLACE FUNCTION album_update_insert_bitacora()
+  RETURNS TRIGGER AS
+$$
+DECLARE nao TIMESTAMP;
+DECLARE usn VARCHAR(30);
+DECLARE pos INT;
+
+    BEGIN
+        SELECT NOW() INTO nao;
+        SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
+
+        IF (TG_OP = 'UPDATE') THEN
+        -- old y new
+            
+            UPDATE bitacora SET verb = 'EDIT', modified = 'ALBUM', modified_id = OLD.albumId, modify_date = nao, old_values = OLD, new_values = NEW WHERE _id = pos;
+            EXECUTE add_user_to_bitacora(usn);
+            RETURN NEW;
+
+        ELSIF (TG_OP = 'INSERT') THEN
+        -- no old
+            
+            UPDATE bitacora SET verb = 'CREATE', modified = 'ALBUM', modified_id = NEW.albumId, modify_date = nao WHERE _id = pos;
+            EXECUTE add_user_to_bitacora(usn);
+            RETURN NEW;
+        END IF;
+    END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER album_bitacora_trigger_up_ins
+    BEFORE UPDATE OR INSERT ON album 
+    FOR EACH ROW EXECUTE PROCEDURE album_update_insert_bitacora();
+
+CREATE OR REPLACE FUNCTION album_delete_bitacora()
+  RETURNS TRIGGER AS
+$$
+DECLARE nao TIMESTAMP;
+DECLARE usn VARCHAR(30);
+DECLARE pos INT;
+    BEGIN
+        SELECT NOW() INTO nao;
+        SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
+        UPDATE bitacora SET verb = 'DELETE', modified = 'ALBUM', modified_id = OLD.albumId, modify_date = nao WHERE _id = pos;
+        EXECUTE add_user_to_bitacora(usn);
+        RETURN OLD;
+    END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER album_bitacora_trigger_del 
+    BEFORE DELETE ON album 
+    FOR EACH ROW EXECUTE PROCEDURE album_delete_bitacora();
+
+
+-- PLAYLIST
+
+CREATE OR REPLACE FUNCTION playlist_update_insert_bitacora()
+  RETURNS TRIGGER AS
+$$
+DECLARE nao TIMESTAMP;
+DECLARE usn VARCHAR(30);
+DECLARE pos INT;
+
+    BEGIN
+        SELECT NOW() INTO nao;
+        SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
+
+        IF (TG_OP = 'UPDATE') THEN
+        -- old y new
+            
+            UPDATE bitacora SET verb = 'EDIT', modified = 'PLAYLIST', modified_id = OLD.playlistId, modify_date = nao, old_values = OLD, new_values = NEW = nao WHERE _id = pos;
+            EXECUTE add_user_to_bitacora(usn);
+            RETURN NEW;
+
+        ELSIF (TG_OP = 'INSERT') THEN
+        -- no old
+            
+            UPDATE bitacora SET verb = 'CREATE', modified = 'PLAYLIST', modified_id = NEW.playlistId, modify_date = nao WHERE _id = pos;
+            EXECUTE add_user_to_bitacora(usn);
+            RETURN NEW;
+        END IF;
+    END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER playlist_bitacora_trigger_up_ins
+    BEFORE UPDATE OR INSERT ON playlist 
+    FOR EACH ROW EXECUTE PROCEDURE playlist_update_insert_bitacora();
+
+CREATE OR REPLACE FUNCTION playlist_delete_bitacora()
+  RETURNS TRIGGER AS
+$$
+DECLARE nao TIMESTAMP;
+DECLARE usn VARCHAR(30);
+DECLARE pos INT;
+    BEGIN
+        SELECT NOW() INTO nao;
+        SELECT _id, username  FROM bitacora WHERE verb is null INTO pos, usn;
+        UPDATE bitacora SET verb = 'DELETE', modified = 'PLAYLIST', modified_id = OLD.playlistId, modify_date = nao WHERE _id = pos;
+        EXECUTE add_user_to_bitacora(usn);
+        RETURN OLD;
+    END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER playlist_bitacora_trigger_del 
+    BEFORE DELETE ON playlist 
+    FOR EACH ROW EXECUTE PROCEDURE playlist_delete_bitacora();

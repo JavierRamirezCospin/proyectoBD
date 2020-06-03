@@ -23,18 +23,20 @@ CREATE TABLE bitacora (
     
 );
 
-CREATE OR REPLACE FUNCTION add_user_to_bitacora(username VARCHAR(30)) RETURNS void AS
+CREATE OR REPLACE FUNCTION add_user_to_bitacora(usn VARCHAR(30)) RETURNS void AS
 $$
+DECLARE pos INT;
     BEGIN
-        INSERT into bitacora (username) VALUES (username);
+        
+        INSERT into bitacora (username) VALUES (usn);
     END
 $$
 LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION remove_user_from_bitacora(username VARCHAR(30)) RETURNS void AS
+CREATE OR REPLACE FUNCTION remove_user_from_bitacora(usn VARCHAR(30)) RETURNS void AS
 $$
     BEGIN
-        DELETE FROM bitacora WHERE username = username AND verb = null AND modified = null AND modify_date = NULL;
+        DELETE FROM bitacora WHERE username = usn AND verb is null;
     END
 $$
 LANGUAGE plpgsql;
